@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alvaro's App Documentation</title>
+
+  <!-- Favicon and touch icons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
+  <link rel="mask-icon" href="{{ url_for('static', filename='safari-pinned-tab.svg') }}" color="#638e1f">
+
+  <!-- Meta tags -->
+  <meta name="apple-mobile-web-app-title" content="Alvaro's App">
+  <meta name="application-name" content="Alvaro's App">
+  <meta name="msapplication-TileColor" content="#b79841">
+  <meta name="theme-color" content="#ffffff">
+
+  <!-- Prism.js library and its Tomorrow theme for syntax highlighting. By adding class="language-python" to the <code> tags,
+        Prism.js will automatically apply Python syntax highlighting to the enclosed code. --->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/components/prism-python.min.js"></script>
+
+
+  <!-- References CSS styling -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+</head>
+<body>
+  <button class="menu-toggle">☰</button>
+  <nav class="sidebar">
+    <ul>
+      <li><a href="/" class="mainmenu-button">Main page</a></li>
+      <li><a href="/datachatbot">Data chatbot</a></li>
+      <li><a href="/dash_stocks">Stocks data dashboard</a></li>
+      <li><a href="/dash_southpark">South Park data dashboard</a></li>
+      <li><a href="{{ url_for('static', filename='presentation.pdf') }}">Auto-generated presentation</a></li>
+      <li><a href="#database" class="documentation-button">How database was made</a>
+        <ul>
+          <li><a href="#database-stocks" class="documentation-button">Stocks data mart</a></li>
+          <li><a href="#database-southpark" class="documentation-button">South park data mart</a></li>
+        </ul>
+      </li>
+      <li><a href="#app" class="documentation-button">How app was made</a>
+        <ul>
+          <li><a href="#app-presentation" class="documentation-button">Presentation generator</a></li>
+          <li><a href="#app-screenshots" class="documentation-button">LLM costs and CRON scheduler</a></li>
+        </ul>
+      </li>
+      <li><a href="https://github.com/alvcantu/coursera_portfolio" class="weblink-button">Data analysis repository</a></li>
+      <li><a href="{{ url_for('static', filename='AlvaroCantuCV.pdf') }}" class="weblink-button">My CV/Resume</a></li>
+      <li><a href="https://www.linkedin.com/in/alvcantu/" class="weblink-button">My LinkedIn</a></li>
+    </ul>
+  </nav>
+
+  <div class="content">
+    <h1>Welcome to Alvaro's App Documentation</h1>
+    <h1>🐛🐛🐛</h1>
+    <div>
+      <section id="database">
+        <h2>My database schema.</h2>
+        <h3>Tables that start with SP are part of the South Park data mart, ST are part of Stocks data mart. Arrows represent relationships</h3>
+        <img src="{{ url_for('static', filename='data_structure_diagram.png') }}" alt="Data Structure Diagram" class="responsive-image">
+
+        <section id="database-stocks">
+          <h2>Stocks data mart</h2>
+          <h3>My intention with this project is to keep track of all trillion dollar company stock prices every day and forecast prices for the next 5 trading days. All with quality checks in place.</h3>
+          <h4>The project's first step is to extract all ticker symbols for trillion dollar companies. I get this data from wikipedia, first scraping the wiki page for each company and then extracting the ticker symbol.</h4>
+          <pre><code class="language-python">{{ company_list_spider }}</code></pre>
+          <h4>Then, using the yfinance library, I extract information about each company using the newly acquired tickers and ingest them to dimenions table ST_DimCompany in my database.</h3>
+          <pre><code class="language-python">{{ etl_ST_DimCompany }}</code></pre>
+          <h4>I then use the newly created table (with quality checks already in place) to extract each ticker again and incrementally add the latest prices to table ST_FactPrices.</h4>
+          <pre><code class="language-python">{{ etl_ST_FactPrices }}</code></pre>
+          <h4>I then add a forecasts to my model. An ARIMA model fills in a new forecast_price_arima column for the next few 5 trading days for each company.</h4>
+          <pre><code class="language-python">{{ etl_ST_FactPrices_Forecast }}</code></pre>
+          <h4>Once all prices are generated and validated, I generate automatic pdf's that place these neatly in a professional way.</h4>
+          <pre><code class="language-python">{{ pdf_gen_stocks }}</code></pre>
+          <h4>Finally I create a script that's sole purpose is to run the correct jobs in order as I've just shown you. This script is later placed in a CRON job scheduler so it runs daily, capturing new prices and calculating forecasts automatically. If the process fails I get an email informing me of what went wrong.</h4>
+          <pre><code class="language-python">{{ run_stocks }}</code></pre>
+          <h4>All of this is rendered to this HTML dashboard using chart.js for all the visuals and interactions</h4>
+          <pre><code class="language-html">{{ dash_stocks }}</code></pre>
+        </section>
+
+        <section id="database-southpark">
+          <h2>South Park data mart</h2>
+          <h3>My intention with this project was to learn web scraping and making a relational data model with quality controls that updates itself.</h3>
+          <h4>The project involves scraping data from Wikipedia. So I create two spiders that extract episode and character information.</h4>
+          <h4>Here is the episode spider:</h4>
+          <pre><code class="language-python">{{ episodes_details_spider }}</code></pre>
+          <h4>Here is the character spider:</h4>
+          <pre><code class="language-python">{{ character_details_spider }}</code></pre>
+          <h4>Once the spiders extract data from the web, they save it to a csv. I then transform the csv to clean the data, take care of special cases, and create a character_id.</h4>
+          <pre><code class="language-python">{{ etl_stg_southpark }}</code></pre>
+          <h4>Once character_id is added I use it to loop through all the episode Wikipedia URL's I extracted previously to obtain the episode summary and if those charater_id's appear in the article. I assume that if the character_id appears, then they appear in the episode too, which is not correct :( my personal south park knowledge knows best. But I did it as a fun exercise and it is somewhat close.</h4>
+          <h4>Here is the third spider that loops through all the episode url's:</h4>
+          <pre><code class="language-python">{{ episode_loop_spider }}</code></pre>
+          <h4>I transform and normalize all the data, add quality checks and load it into mySQL database in a relational model form withh additional quality constrains, with a fact table listing characters per episode and two dimension tables listing details on episodes and characters respectively.</h4>
+          <pre><code class="language-python">{{ etl_southpark }}</code></pre>
+          <h4>Finally I create a script that's sole purpose is to run the correct jobs in order as I've just shown you. This script is later placed in a CRON job scheduler so it runs daily. Therefore caputiring new episodes and new characters automatically. If there are any failures, the scrip sends me an email informing me of what went wrong.</h4>
+          <pre><code class="language-python">{{ run_southpark }}</code></pre>
+          <h4>All of this is rendered to this HTML dashboard using chart.js for all the visuals and interactions</h4>
+          <pre><code class="language-html">{{ dash_southpark }}</code></pre>
+        </section>
+      </section>
+
+      <section id="app">
+        <h2>How app was created</h2>
+        <h3>This script is the Flask backend used to apply all logic for all aspects of the app. Each app route @ represents each button or url of the app</h3>
+        <h4>For the chatbot, I run a query to extract the information schema of each table in the database automatically (with comments of each column for added context) and include it in the prompt for the large language model to understand the data and output an accurate SQL query. This query is then executed, the results are cleaned & converted to html, and the output is rendered in the chatbot user interface with options to export to CSV, Excel, PDF etc. I use OpenRouter auto selector so the best LLM is chosen every time. For safety purposes, I make sure to only execute queries that do not modify the database in any way.</h4>
+        <h4>For this documentation, all text boxes with code on this site are automatically rendered with senstive data such as passwords and API keys being hidden or 'sanitized'. The database schema diagram is automatically created with the create_data_structure_diagram function using graphviz library.</h4>
+        <h4>For the data dashboards, note how a SQL query is executed that dynamically changes depending on user input. This results in only the data the user needs to see to be loaded to the site, hence reducing the need for additional front-end javascript logic.</h4>
+        <pre><code class="language-python">{{ web_app }}</code></pre>
+        <section id="app-presentation">
+          <h3>This script generates the daily presentation. I use a master canvas so the presentation remains consistent throughout and add elements afterwards. Graphs (from matplotlib) and bullet points (from LLM response) are both always generated using latest data. This file is also placed on a CRON job scheduler so it runs every day, generating a new presentation automcatically.</h3>
+          <pre><code class="language-python">{{ presentation_generator }}</code></pre>
+        </section>
+        <section id="app-screenshots">
+        <h3>Sample screenshot of how costs associeated with all LLM usage in the app is tracked:</h3>
+          <img src="{{ url_for('static', filename='openrouter_activity.png') }}" alt="Openrouter Activity" class="responsive-image">
+          <h3>Sample screenshot of how jobs are scheduler in built-in CRON feature in python-anywhere server:</h3>
+          <img src="{{ url_for('static', filename='CRON_scheduler.png') }}" alt="CRON scheduler" class="responsive-image">
+        </section>
+      </section>
+    </div>
+  </div>
+
+  <!-- References Javascript logic for sidebar button and menu -->
+  <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</body>
+</html>

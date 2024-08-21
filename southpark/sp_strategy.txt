@@ -1,0 +1,91 @@
+EXTRACTION (one spider per -)
+-episode details from https://en.wikipedia.org/wiki/List_of_South_Park_episodes
+    To extract
+        -prod_code = episode_id
+        -no_overall
+        -no_season
+        -date
+        -link referring to episode wiki
+    after extraction
+        -add incremantally to stg_episodes_one.csv
+            -check if episode_id exists, if not add
+-character details from https://en.wikipedia.org/wiki/List_of_South_Park_characters
+    -3 sections
+        -Data under Main Characters
+            -full_name = heading
+            -role = text below
+        -Data under Secondary Characters
+            -Same strategy as above
+            -Separate Terrace & phillips + Kyle's parents (edge case)
+        -Data under recurring table
+            -full_name = character
+            -role = role
+    -Join all 3
+        -set character_id as first name of each character in underscore
+        -save as stg_characters.csv incrementally
+            -check if character_id exists
+-Loop of each episode wiki
+    -using link from stg_episodes_one
+        -visit link and extract
+            -episode_name = title
+            -episode_summary = first paragraph
+            -save as stg_episodes_two.csv
+        -visit link and check if any character_id appears in the page
+            -add to stg_episodes_three
+
+TRANSFORM
+-SP_FactEpisodesCharacters (
+    -use stg_episodes_three as base
+    -replace link with episode_id from stg_episode_one
+    -add episode_character_id (each row)
+    -character_id check
+        -list all characters, check for inconsistencies, underscore all of them.
+        -make sure all match character_id from DimCharacters
+        -make sure is string
+    -episode_id check
+        -make sure is numerical
+        -makr sure it matches value from DimEpisodes
+-SP_DimCharacters (character_id, role)
+    -using link as connector, combine stg_episode_one and stg_episode_two
+    -remove link
+    -tests/conditionals
+        -data types
+            -no_overall and no_episode need to be
+-SP_DimEpisodes (episode_id, episode_name, no_season, no_overall, date, summary)
+    -combine stg_episode_one and stg_episode_two
+    -remove link
+    -tests/conditionals
+        -episode_id should be numerical
+        -episode_name should be unique, remove no " characters
+        -no_season and no_overall should be unique and numerical
+        -summary should be string.
+        -date should be date and unique
+
+
+LOAD
+-Create three tables with same conditions as clean above
+-Relationships conditions
+    -all episode_id's must exist in both tables
+    -all character_id's must exist in both tables
+    -set strict many to one from fact to dim
+-load straight after transform, no additonal stage.
+
+
+
+Running jobs
+1. Extraction
+    episode_details_spider
+    -------------------(once done)----> episode_loop_spider
+    character_details_spider
+2. Transform & load
+    DimEpisodes ->
+    -------------------(once done)----> FactEpisodeCharacters
+    DimCharacters ->
+
+
+FUTURE DEVELOPMENT:
+-Theme classification from episode summary
+
+
+FLAWS FOUND:
+-fourth grade episode (added manually) summary exctract needs to be added manually to.

@@ -1,0 +1,435 @@
+/* Prism.js library and its Tomorrow theme for syntax highlighting */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/themes/prism-tomorrow.min.css');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #2d3436;
+    font-family: 'Roboto', sans-serif;
+    color: #f1f1f1;
+    margin: 0;
+}
+h1, p, a {
+    margin: 0;
+    padding: 10px 20px;
+    text-align: center;
+    color: #fff;
+}
+h1 {
+  font-size: 2.25rem;
+  padding-top: 1rem; /* Added top padding */
+}
+
+h2 {
+    text-align: center;
+}
+
+p {
+    font-size: 1.2rem;
+}
+a {
+  display: inline-block;
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 1rem;
+  justify-content: center; /* Center horizontally */
+  align-items: center; /* Center vertically if the container has a fixed height */
+  margin-top: 20px;
+  transition: background-color 0.3s ease;
+}
+/* Main menu button style */
+.mainmenu-button {
+  background-color: #49714b;
+}
+
+/* Documentation button style */
+.documentation-button {
+  background-color: #9e3637;
+}
+
+/*Web link button style */
+.weblink-button {
+  background-color: #4745ae73;
+}
+
+/* Custom font size for python documentation scrips */
+code[class*="language-"],
+pre[class*="language-"] {
+    font-size: 10px; /* Adjust the font size as needed */
+}
+
+form {
+  box-sizing: border-box;
+  padding: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 10px;
+}
+
+input[type="text"], textarea {
+  width: 100%;
+  padding: 15px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 5px;
+  box-sizing: border-box;
+  font-size: 1rem;
+}
+
+input[type="submit"] {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  display: block;
+  margin: 0 auto;
+}
+
+input[type="submit"]:hover {
+  background-color: #45a049;
+}
+
+textarea {
+  height: 300px;
+  padding: 15px;
+  width: 80%;
+}
+
+/* Dropdown menus styling */
+/* Common styles for all select elements */
+select {
+  font-family: 'Roboto', sans-serif;
+  color: white;
+  background-color: transparent;
+  border: 1px solid white;
+  padding: 5px;
+  margin: 5px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 20px;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 5px top 50%;
+  cursor: pointer;
+}
+
+/* Hover effect for select elements */
+select:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Focus effect for select elements */
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+/* Styles for select options */
+select option {
+  background-color: #333;
+  color: white;
+}
+
+/* Custom styles for multi-select elements */
+.custom-multi-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.custom-multi-select label {
+  background-color: #444;
+  color: white;
+  padding: 5px 10px;
+  border: 1px solid white;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: 'Roboto', sans-serif;
+  margin-bottom: 5px;
+}
+
+.custom-multi-select input[type="checkbox"] {
+  display: none;
+}
+
+.custom-multi-select input[type="checkbox"]:checked + label {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.custom-multi-select label:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Menu toggle button */
+.menu-toggle {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.5rem;
+  z-index: 1000;
+}
+
+.menu-toggle:hover {
+  background-color: #45a049;
+}
+
+/* Sidebar menu */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 250px;
+  background-color: #2d3436;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 999;
+  padding-top: 60px;
+  padding-right: 15px; /* Added padding to the right */
+  padding-left: 15px; /* Added padding to the left to match */
+  border-right: 1px solid #45a049; /* Added border to the right */
+  box-sizing: border-box; /* Ensure padding is included in width */
+  overflow-y: auto; /* adds scrolling in case elements exceed screen size */
+}
+.sidebar.active {
+  transform: translateX(0);
+}
+.sidebar ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+.sidebar ul li {
+  margin: 20px 0;
+}
+.sidebar ul li a {
+  display: block;
+  padding: 10px 0; /* Adjusted padding to account for sidebar padding */
+  color: #fff;
+  text-decoration: none;
+}
+.sidebar ul li a:hover {
+  background-color: #3e505b; /* Generic hover color for links without specific classes */
+}
+
+/* Nested list styling */
+.sidebar ul li ul {
+  margin-top: 10px;
+  margin-left: 20px;
+}
+.sidebar ul li ul li {
+  margin: 10px 0;
+}
+.content {
+  margin-left: 0;
+  transition: margin-left 0.3s ease;
+  padding: 15px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.content.active {
+  margin-left: 250px;
+}
+@media (max-width: 100%) {
+  .content.active {
+    margin-left: 0;
+  }
+}
+
+/* Added extra condition so image does not exceed size of screen */
+.responsive-image {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: auto;
+}
+
+/* Styling for chatbot and pop up with data model */
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #2d3436;
+    z-index: 999;
+}
+.popup {
+    display: none;
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    background-color: white;
+    padding: 20px;
+    border: 1px solid #ccc;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 9998;
+}
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 60px);
+    width: 100%;
+    margin: 60px auto 0;
+    padding: 15px;
+    box-sizing: border-box;
+}
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+.message {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 5px;
+    word-wrap: break-word;
+    width: 100%;
+    box-sizing: border-box;
+}
+.user-message {
+    background-color: #3498db;
+}
+.bot-message {
+    background-color: #2ecc71;
+}
+/* Added CSS for pre and code elements */
+.bot-message pre, .bot-message code {
+    white-space: pre-wrap; /* Ensures the text wraps */
+    word-wrap: break-word; /* Prevents long words from overflowing */
+    width: 100%; /* Ensures the pre/code elements take the full width of the container */
+    overflow: auto; /* Adds a scrollbar if needed */
+}
+.input-area {
+    display: flex;
+    align-items: center; /* Ensures the items are vertically centered */
+}
+
+#user-input, #send-button {
+    box-sizing: border-box; /* Ensures padding and border are included in the element's total width and height */
+    height: 40px; /* Ensures both elements have the same height */
+}
+
+#user-input {
+    flex: 1;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px 0 0 5px;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+#send-button {
+    padding: 0 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 0 5px 5px 0;
+    background-color: #3498db;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+#send-button:hover {
+    background-color: #2980b9;
+}
+
+.table-container {
+    overflow-x: auto;
+    margin-top: 15px;
+}
+#myTable {
+    width: 100%;
+    border-collapse: collapse;
+    color: #ffffff;
+    background-color: #1a1a1a;
+}
+#myTable th, #myTable td {
+    border: 1px solid #444;
+    padding: 8px;
+    text-align: left;
+}
+#myTable th {
+    background-color: #2c2c2c;
+    color: #ffffff;
+    font-weight: bold;
+}
+#myTable tr:nth-child(even) {
+    background-color: #222222;
+}
+#myTable tr:nth-child(odd) {
+    background-color: #1a1a1a;
+}
+#myTable tr:hover {
+    background-color: #2a2a2a;
+}
+#myTable tr.even {
+    background-color: #222222 !important;
+}
+#myTable tr.odd {
+    background-color: #1a1a1a !important;
+}
+#myTable tr.even td.sorting_1,
+#myTable tr.odd td.sorting_1 {
+    background-color: #2a2a2a !important;
+}
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_processing,
+.dataTables_wrapper .dataTables_paginate {
+    color: #ffffff;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    color: #ffffff !important;
+    background-color: #2c2c2c !important;
+    border: 1px solid #444 !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background-color: #3c3c3c !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    color: #ffffff !important;
+    background-color: #4c4c4c !important;
+}

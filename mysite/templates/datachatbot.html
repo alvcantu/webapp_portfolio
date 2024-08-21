@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Favicon and touch icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
+    <link rel="mask-icon" href="{{ url_for('static', filename='safari-pinned-tab.svg') }}" color="#638e1f">
+
+    <!-- Meta tags -->
+    <meta name="apple-mobile-web-app-title" content="Alvaro's App">
+    <meta name="application-name" content="Alvaro's App">
+    <meta name="msapplication-TileColor" content="#b79841">
+    <meta name="theme-color" content="#ffffff">
+
+    <title>Alvaro's Data Chatbot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/1.7.1/css/buttons.dataTables.min.css">
+
+    <!-- References CSS styling -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+</head>
+<body>
+    <button class="menu-toggle">☰</button>
+        <nav class="sidebar">
+            <ul>
+              <li><a href="/" class="mainmenu-button">Main page</a></li>
+              <li><a href="/dash_stocks">Stocks data dashboard</a></li>
+              <li><a href="/dash_southpark">South Park data dashboard</a></li>
+              <li><a href="{{ url_for('static', filename='presentation.pdf') }}">Auto-generated presentation</a></li>
+              <li><a href="/documentation#database" class="documentation-button">How data model was created</a></li>
+              <li><a href="/documentation#app" class="documentation-button">How this app was made</a></li>
+              <li><a href="https://github.com/alvcantu/coursera_portfolio" class="weblink-button">Data analysis repository</a></li>
+              <li><a href="{{ url_for('static', filename='AlvaroCantuCV.pdf') }}" class="weblink-button">My CV/Resume</a></li>
+              <li><a href="https://www.linkedin.com/in/alvcantu/" class="weblink-button">My LinkedIn</a></li>
+            </ul>
+        </nav>
+    <div class="header">
+
+        <!-- Pop-up button -->
+        <a class="documentation-button" onclick="openPopup()">See data that can be queried</a>
+        <!-- <button onclick="openPopup()">See data that can be queried</button> --->
+
+        <div id="popup" class="popup">
+            <img src="{{ url_for('static', filename='data_structure_diagram.png') }}" alt="Data Structure Diagram" class="responsive-image">
+            <button onclick="closePopup()">Close</button>
+        </div>
+
+        <div id="overlay" class="overlay"></div>
+
+        <script>
+            function openPopup() {
+                document.getElementById("popup").style.display = "block";
+                document.getElementById("overlay").style.display = "block";
+            }
+
+            function closePopup() {
+                document.getElementById("popup").style.display = "none";
+                document.getElementById("overlay").style.display = "none";
+            }
+        </script>
+    </div>
+    <div class="chat-container">
+        <div class="chat-messages" id="chat-messages">
+            {% if user_query %}
+                <div class="message user-message">{{ user_query }}</div>
+            {% endif %}
+            {% if sql_query %}
+                <div class="message bot-message">
+                    <pre><code>{{ sql_query }}</code></pre>
+                </div>
+            {% endif %}
+            {% if table_html %}
+                <div class="message bot-message">
+                    <div class="table-container">
+                        {{ table_html|safe }}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        <form class="input-area" method="POST" action="{{ url_for('db_chatbot') }}">
+            <input type="text" id="user-input" name="user_query" placeholder="Ask anything about the data..." required>
+            <button type="submit" id="send-button">Send</button>
+        </form>
+    </div>
+
+    <!-- References Javascript logic for sidebar button and menu -->
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+
+    <!-- jQuery -->
+    <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- DataTables JS -->
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+    <!-- DataTables Buttons JS -->
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/dataTables.buttons.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.html5.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.print.min.js"></script>
+
+    <script>
+        // Scroll to bottom of chat messages
+        function scrollToBottom() {
+            var chatMessages = document.getElementById('chat-messages');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Call scrollToBottom when page loads and after form submission
+        window.onload = function() {
+            scrollToBottom();
+            if (document.getElementById('myTable')) {
+                $('#myTable').DataTable({
+                    dom: 'Bfrtip',
+                    buttons: [
+                        'copy', 'csv', 'excel', 'pdf', 'print'
+                    ],
+                });
+            }
+        };
+    </script>
+</body>
+</html>

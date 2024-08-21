@@ -1,0 +1,19 @@
+{
+    "name": "Alvaro's App",
+    "short_name": "Alvaro's App",
+    "icons": [
+        {
+            "src": "/home/alvcantu/mysite/images/android-chrome-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/home/alvcantu/mysite/images/android-chrome-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#ffffff",
+    "background_color": "#ffffff",
+    "display": "standalone"
+}

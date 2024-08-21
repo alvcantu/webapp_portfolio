@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alvaro's South Park Data Dashboard</title>
+  <!-- Favicon and touch icons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
+  <link rel="mask-icon" href="{{ url_for('static', filename='safari-pinned-tab.svg') }}" color="#638e1f">
+  <!-- Meta tags -->
+  <meta name="apple-mobile-web-app-title" content="Alvaro's App">
+  <meta name="application-name" content="Alvaro's App">
+  <meta name="msapplication-TileColor" content="#b79841">
+  <meta name="theme-color" content="#ffffff">
+  <!-- References CSS styling -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+</head>
+<body>
+  <button class="menu-toggle">☰</button>
+  <nav class="sidebar">
+    <ul>
+      <li><a href="/" class="mainmenu-button">Main page</a></li>
+      <li><a href="/datachatbot">Data chatbot</a></li>
+      <li><a href="/dash_stocks">Stocks data dashboard</a></li>
+      <li><a href="{{ url_for('static', filename='presentation.pdf') }}">Auto-generated presentation</a></li>
+      <li><a href="/documentation#database-southpark" class="documentation-button">How data model was created</a></li>
+      <li><a href="/documentation#app" class="documentation-button">How this app was made</a></li>
+      <li><a href="https://github.com/alvcantu/coursera_portfolio" class="weblink-button">Data analysis repository</a></li>
+      <li><a href="{{ url_for('static', filename='AlvaroCantuCV.pdf') }}" class="weblink-button">My CV/Resume</a></li>
+      <li><a href="https://www.linkedin.com/in/alvcantu/" class="weblink-button">My LinkedIn</a></li>
+    </ul>
+  </nav>
+
+  <!-- References Javascript logic for sidebar button and menu -->
+  <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+
+  <h1>South Park Data Dashboard</h1>
+
+  <script>
+    var characterColors = {
+      "Bebe Stevens": "rgb(39, 6, 236)",
+      "Big Gay Al": "rgb(57, 69, 111)",
+      "Bradley Biggle": "rgb(138, 238, 162)",
+      "Carol McCormick": "rgb(79, 38, 60)",
+      "Chef": "rgb(26, 243, 33)",
+      "Chris/Stephen Stotch": "rgb(214, 53, 35)",
+      "Clyde Donovan": "rgb(112, 219, 117)",
+      "Craig Tucker": "rgb(72, 66, 176)",
+      "Darryl Weathers": "rgb(198, 23, 194)",
+      "Dougie O'Connel": "rgb(39, 219, 219)",
+      "Dr. Alphonse Mephesto": "rgb(127, 38, 49)",
+      "Eric Cartman": "rgb(255, 0, 0)",
+      "Father Maxi": "rgb(187, 58, 26)",
+      "Firkle Smith": "rgb(126, 231, 245)",
+      "Gerald Broflovski": "rgb(245, 43, 140)",
+      "Grandpa Marvin Marsh": "rgb(20, 195, 215)",
+      "Harrison Yates": "rgb(72, 110, 38)",
+      "Heidi Turner": "rgb(53, 70, 205)",
+      "Henrietta Biggle": "rgb(116, 32, 209)",
+      "Herbert Garrison": "rgb(193, 166, 39)",
+      "Ike Broflovski": "rgb(54, 90, 100)",
+      "Jesus": "rgb(64, 27, 134)",
+      "Jimbo Kern": "rgb(131, 25, 235)",
+      "Jimmy Valmer": "rgb(17, 77, 52)",
+      "Karen McCormick": "rgb(122, 142, 116)",
+      "Kenny McCormick": "rgb(255, 140, 0)",
+      "Kevin McCormick": "rgb(71, 93, 247)",
+      "Kevin Mephesto": "rgb(10, 41, 255)",
+      "Kyle Broflovski": "rgb(0, 255, 0)",
+      "Leopold \"Butters\" Stotch": "rgb(220, 114, 67)",
+      "Liane Cartman": "rgb(39, 200, 232)",
+      "Linda Stotch": "rgb(38, 242, 189)",
+      "Mayor Mary McDaniels": "rgb(15, 165, 81)",
+      "Michael": "rgb(240, 207, 15)",
+      "Mr. Hankey": "rgb(192, 121, 141)",
+      "Mr. Mackey": "rgb(174, 107, 27)",
+      "Mr. Slave": "rgb(26, 99, 151)",
+      "Nathan": "rgb(30, 240, 60)",
+      "Ned Gerblanski": "rgb(181, 196, 75)",
+      "Nichole Daniels": "rgb(56, 16, 217)",
+      "Officer Barbrady": "rgb(32, 24, 5)",
+      "PC Principal": "rgb(129, 49, 138)",
+      "Pete Thelman": "rgb(177, 20, 170)",
+      "Pip Pirrup": "rgb(200, 124, 32)",
+      "Randy Marsh": "rgb(134, 37, 95)",
+      "Red McArthur": "rgb(121, 3, 12)",
+      "Santa Claus": "rgb(171, 216, 138)",
+      "Satan": "rgb(182, 233, 103)",
+      "Scott Malkinson": "rgb(193, 127, 220)",
+      "Scott The Dick": "rgb(178, 52, 38)",
+      "Sharon Marsh": "rgb(176, 57, 124)",
+      "Sheila Broflovski": "rgb(100, 49, 87)",
+      "Shelley Marsh": "rgb(175, 207, 28)",
+      "Stan Marsh": "rgb(0, 0, 255)",
+      "Strong Woman": "rgb(31, 82, 224)",
+      "Stuart McCormick": "rgb(100, 127, 159)",
+      "Terrance and Phillip": "rgb(61, 202, 205)",
+      "Timmy Burch": "rgb(169, 172, 200)",
+      "Tolkien Black": "rgb(139, 13, 244)",
+      "Towelie": "rgb(47, 118, 246)",
+      "Tuong Lu Kim": "rgb(98, 107, 132)",
+      "Tweek Tweak": "rgb(254, 63, 81)",
+      "Ugly Bob": "rgb(3, 4, 9)",
+      "Wendy Testaburger": "rgb(57, 124, 206)"
+    };
+  </script>
+
+  <!-- Character and season filter box selection -->
+ <form id="filterForm" onchange="this.submit()">
+  <label for="character" >Character:</label>
+  <select name="character" id="character">
+    {% for char in full_char_list %}
+    <option value="{{ char }}" {% if selected_character == char %}selected{% endif %}>{{ char }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="seasons" style="margin-top: 1vh;">Seasons:</label>
+  <label for="seasons">All seasons selected by default, season 0 includes all episodes considered specials.</label>
+    <div class="custom-multi-select">
+      {% for season in season_list %}
+        <input type="checkbox" id="season_{{ season }}" name="seasons" value="{{ season }}"
+              {% if season|string in selected_seasons|map('string') %}checked{% endif %}>
+        <label for="season_{{ season }}">{{ season }}</label>
+      {% endfor %}
+    </div>
+ </form>
+
+  <!-- Character info section -->
+  <div id="character-info" style="margin-top: 20px; text-align: center; width: 80%">
+    <hr id="top-line" style="border: 2px solid; width: 100%;">
+    <h2 id="character-name" style="color: white;">{{ selected_character }}</h2>
+    <p id="character-role" style="color: white;">{{ character_role[0][0] if character_role else 'Role not specified' }}</p>
+    <hr id="bottom-line" style="border: 2px solid; width: 100%;">
+  </div>
+
+  <!-- Charts section -->
+  <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+    <div style="width: 80%; margin-bottom: 10vh;">
+      <canvas id="appearancesPerSeasonChart"></canvas>
+    </div>
+    <div style="width: 80%; margin-bottom: 10vh;">
+      <canvas id="appearsWithChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Episode List Section -->
+  <div id="episode-list">
+    <h2 style="color: white;">Episodes Featuring {{ selected_character }}</h2>
+    <table style="color: white; width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th style="border-bottom: 1px solid white; padding: 10px;">Season</th>
+          <th style="border-bottom: 1px solid white; padding: 10px;">Episode</th>
+          <th style="border-bottom: 1px solid white; padding: 10px;">Title</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for episode in episode_list %}
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid white;">{{ episode[0] }}</td>
+          <td style="padding: 10px; border-bottom: 1px solid white;">{{ episode[1] }}</td>
+          <td style="padding: 10px; border-bottom: 1px solid white;">{{ episode[2] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+
+  <script>
+    // Set the color of the top and bottom lines
+    var characterColor = characterColors["{{ selected_character }}"] || 'white';
+    document.getElementById('top-line').style.borderColor = characterColor;
+    document.getElementById('bottom-line').style.borderColor = characterColor;
+
+    // Appearances Per Season Chart
+    var appearancesPerSeasonCtx = document.getElementById('appearancesPerSeasonChart').getContext('2d');
+    var appearancesPerSeasonChart = new Chart(appearancesPerSeasonCtx, {
+      type: 'bar',
+      data: {
+        labels: {{ appearances_per_season|tojson }}.map(item => item[0]),
+        datasets: [{
+          label: 'Appearances',
+          data: {{ appearances_per_season|tojson }}.map(item => item[1]),
+          backgroundColor: characterColors["{{ selected_character }}"] || 'rgb(160, 160, 160)',
+          borderColor: 'white',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        layout: {
+          padding: {
+            top: 50,  // Further increased top padding to push content down more
+          }
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: 'Appearances Per Season',
+            color: 'white',
+            font: {
+              size: 22
+            },
+            padding: {
+              bottom: 40 // Increased bottom padding to create more space below the title
+            }
+          },
+          legend: {
+            display: false
+          },
+          datalabels: {
+            color: 'white',
+            anchor: 'end',
+            align: 'end',
+            offset: 10,  // Increased offset to push the labels further inward from the bar's end
+            font: {
+              size: 12
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Season',
+              color: 'white'
+            },
+            ticks: { color: 'white' },
+            grid: { display: false }
+          },
+          y: {
+            display: false
+          }
+        }
+      },
+      plugins: [ChartDataLabels]
+    });
+
+
+      // Appears With Chart
+      var appearsWithCtx = document.getElementById('appearsWithChart').getContext('2d');
+      var appearsWithChart = new Chart(appearsWithCtx, {
+        type: 'bar',
+        data: {
+          labels: {{ appears_with|tojson }}.map(item => item[0]),
+          datasets: [{
+            label: 'Appearances Together',
+            data: {{ appears_with|tojson }}.map(item => item[1]),
+            backgroundColor: characterColors["{{ selected_character }}"] || 'rgb(160, 160, 160)',
+            borderColor: 'white',
+            borderWidth: 1,
+            barThickness: 'flex',  // Makes bar thickness flexible
+            maxBarThickness: 50  // Limits the maximum bar thickness
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Character Most Appears With',
+              color: 'white',
+              font: {
+                size: 22
+              }
+            },
+            subtitle: {
+              display: true,
+              text: "Top 10",
+              color: 'white',
+              font: {
+                size: 16
+              },
+              padding: {
+                bottom: 10
+              }
+            },
+            legend: {
+              display: false
+            },
+            datalabels: {
+              color: 'white',
+              anchor: 'end',
+              align: 'end',
+              font: {
+                size: 12
+              }
+            }
+          },
+          scales: {
+            x: {
+              display: false,
+              max: Math.max(...{{ appears_with|tojson }}.map(item => item[1])) * 1.1, // Ensures the x-axis accommodates the bars in case they run out of space
+            },
+            y: {
+              ticks: { color: 'white' },
+              grid: { display: false }
+            }
+          }
+        },
+        plugins: [ChartDataLabels]
+      });
+  </script>
+</body>
+</html>

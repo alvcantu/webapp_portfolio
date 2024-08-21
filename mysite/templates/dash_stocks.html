@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alvaro's Stocks Data Dashboard</title>
+  <!-- Favicon and touch icons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
+  <link rel="mask-icon" href="{{ url_for('static', filename='safari-pinned-tab.svg') }}" color="#638e1f">
+  <!-- Meta tags -->
+  <meta name="apple-mobile-web-app-title" content="Alvaro's App">
+  <meta name="application-name" content="Alvaro's App">
+  <meta name="msapplication-TileColor" content="#b79841">
+  <meta name="theme-color" content="#ffffff">
+  <!-- References CSS styling -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.1/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.2.1/chartjs-plugin-zoom.min.js"></script>
+</head>
+<body>
+  <button class="menu-toggle">☰</button>
+  <nav class="sidebar">
+    <ul>
+      <li><a href="/" class="mainmenu-button">Main page</a></li>
+      <li><a href="/datachatbot">Data chatbot</a></li>
+      <li><a href="/dash_southpark">South Park data dashboard</a></li>
+      <li><a href="{{ url_for('static', filename='presentation.pdf') }}">Auto-generated presentation</a></li>
+      <li><a href="/documentation#database-stocks" class="documentation-button">How data model was created</a></li>
+      <li><a href="/documentation#app" class="documentation-button">How this app was created</a></li>
+      <li><a href="https://github.com/alvcantu/coursera_portfolio" class="weblink-button">Data analysis repository</a></li>
+      <li><a href="{{ url_for('static', filename='AlvaroCantuCV.pdf') }}" class="weblink-button">My CV/Resume</a></li>
+      <li><a href="https://www.linkedin.com/in/alvcantu/" class="weblink-button">My LinkedIn</a></li>
+    </ul>
+  </nav>
+  <h1>Trillion dollar company stock prices and short-term forecast</h1>
+
+  <select id="company-select" onchange="updateCompanyData()">
+    {% for company in company_names %}
+      <option value="{{ company }}" {% if company == selected_company %}selected{% endif %}>{{ company }}</option>
+    {% endfor %}
+  </select>
+
+  <!-- Company info-->
+  <div id="company-info"></div>
+
+  <!-- Reset zoom button-->
+  <button id="resetZoom">Reset Zoom</button>
+
+  <!--Chart-->
+  <div style="width: 80%; margin: auto;">
+    <canvas id="priceChart"></canvas>
+  </div>
+
+  <!-- References Javascript logic for sidebar button and menu -->
+  <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+
+  <script>
+    // Converts output from flask to JSON
+    let companyData = {{ company_data|tojson }};
+    let chart;
+
+    function updateCompanyData() {
+      let selectedCompany = document.getElementById('company-select').value;
+      let data = companyData[selectedCompany];
+
+      // Update company info
+      document.getElementById('company-info').innerHTML = `
+        <div style="text-align: center;">
+          <a href=${data.pdf_url} target="_blank">Download daily generated PDF</a>
+        </div>
+        <h2>${data.name}</h2>
+        <p>Country: ${data.country}</p>
+        <p>Website: ${data.website}</p>
+        <p>Industry: ${data.industry}</p>
+        <p>Currency: ${data.currency}</p>
+    `;
+
+      // Update chart
+      if (chart) {
+        chart.destroy();
+      }
+
+      let ctx = document.getElementById('priceChart').getContext('2d');
+
+      // Filter data for all actual prices and all forecast prices
+      let currentDate = new Date();
+      let threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(currentDate.getMonth() - 3);
+
+      let actualPrices = data.prices.filter(item => item.price_type === 'Actual');
+      let forecastPrices = data.prices.filter(item => item.price_type === 'Forecast');
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.prices.map(item => item.date),
+          datasets: [{
+            label: 'Actual',
+            data: actualPrices.map(item => ({x: item.date, y: item.price})),
+            borderColor: 'rgba(255, 255, 255, 1)',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            borderWidth: 2,
+            fill: false,
+            pointRadius: 0
+          },
+          {
+            label: 'Forecast',
+            data: forecastPrices.map(item => ({x: item.date, y: item.price})),
+            borderColor: 'rgba(255, 255, 255, 1)',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            fill: false,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              type: 'time',
+              time: {
+                unit: 'day'
+              },
+              min: threeMonthsAgo.toISOString(),
+              max: currentDate.toISOString(),
+              ticks: {
+                color: 'white'
+              },
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
+            },
+            y: {
+              ticks: {
+                color: 'white'
+              },
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: 'white'
+              }
+            },
+            zoom: {
+              zoom: {
+                wheel: {
+                  enabled: true,
+                },
+                pinch: {
+                  enabled: true
+                },
+                mode: 'xy',
+              },
+              pan: {
+                enabled: true,
+                mode: 'xy',
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Initialize with the first company
+    updateCompanyData();
+
+    // Add reset zoom functionality
+    document.getElementById('resetZoom').addEventListener('click', () => {
+      chart.resetZoom();
+    });
+  </script>
+</body>
+</html>
