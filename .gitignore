@@ -18,3 +18,4 @@
 .wget-hsts
 .my.cnf
 __pycache__
+.profile
