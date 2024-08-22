@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alvaro's Self Service Data Dashboard</title>
+  <!-- Favicon and touch icons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
+  <link rel="mask-icon" href="{{ url_for('static', filename='safari-pinned-tab.svg') }}" color="#638e1f">
+  <!-- Meta tags -->
+  <meta name="apple-mobile-web-app-title" content="Alvaro's App">
+  <meta name="application-name" content="Alvaro's App">
+  <meta name="msapplication-TileColor" content="#b79841">
+  <meta name="theme-color" content="#ffffff">
+  <!-- References CSS styling -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <!-- Chart.js -->
+</head>
+<body>
+
+  <button class="menu-toggle">☰</button>
+  <nav class="sidebar">
+    <ul>
+      <li><a href="/" class="mainmenu-button">Main page</a></li>
+      <li><a href="/datachatbot">Data chatbot</a></li>
+      <li><a href="/dash_southpark">South Park data dashboard</a></li>
+      <li><a href="/dash_stocks">Stocks data dashboard</a></li>
+      <li><a href="{{ url_for('static', filename='presentation.pdf') }}">Auto-generated presentation</a></li>
+      <li><a href="/documentation#database-online_retail" class="documentation-button">How data model was created</a></li>
+      <li><a href="/documentation#app" class="documentation-button">How this app was created</a></li>
+      <li><a href="https://github.com/alvcantu/coursera_portfolio" class="weblink-button">Data analysis repository</a></li>
+      <li><a href="{{ url_for('static', filename='AlvaroCantuCV.pdf') }}" class="weblink-button">My CV/Resume</a></li>
+      <li><a href="https://www.linkedin.com/in/alvcantu/" class="weblink-button">My LinkedIn</a></li>
+    </ul>
+  </nav>
+
+  <!-- References Javascript logic for sidebar button and menu -->
+  <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+  
+  <h1>Work in progress</h1>
+
+  <!-- Input boxes for everything-->
+  <form id="filterForm" method="POST">
+    <label for="selected_datamart">Datamart:</label>
+    <select name="selected_datamart" id="selected_datamart" onchange="this.form.submit()">
+      {% for datamart in data_mart_list %}
+      <option value="{{ datamart }}" {% if selected_datamart == datamart %}selected{% endif %}>{{ datamart }}</option>
+      {% endfor %}
+    </select>
+  
+    <label for="selected_dimensions" style="margin-top: 1vh;">Dimensions:</label>
+    <div class="custom-multi-select">
+      {% for dimension in dimension_columns %}
+        <input type="checkbox" id="dimension_{{ dimension }}" name="selected_dimensions" value="{{ dimension }}"
+              {% if dimension in selected_dimensions %}checked{% endif %}>
+        <label for="dimension_{{ dimension }}">{{ dimension }}</label>
+      {% endfor %}
+    </div>
+  
+    <label for="selected_measures" style="margin-top: 1vh;">Measures:</label>
+    <div class="custom-multi-select">
+      {% for measure in measure_columns %}
+        <input type="checkbox" id="measure_{{ measure }}" name="selected_measures" value="{{ measure }}"
+              {% if measure in selected_measures %}checked{% endif %}>
+        <label for="measure_{{ measure }}">{{ measure }}</label>
+      {% endfor %}
+    </div>
+  
+    <label for="selected_visual">Visualization Type:</label>
+    <select name="selected_visual" id="selected_visual" onchange="this.form.submit()">
+      <option value="Table" {% if selected_visual == 'Table' %}selected{% endif %}>Table</option>
+      <option value="Area" {% if selected_visual == 'Area' %}selected{% endif %}>Area</option>
+      <option value="Line" {% if selected_visual == 'Line' %}selected{% endif %}>Line</option>
+      <option value="Bar" {% if selected_visual == 'Bar' %}selected{% endif %}>Bar</option>
+    </select>
+  </form>
+  
+  <!--- Visual with user selection and backend filtering pre-done-->
+  {% if selected_visual == 'Table' %}
+    <div>{{ data_output | safe }}</div>
+  {% else %}
+    <canvas id="myChart"></canvas>
+    <script>
+      var ctx = document.getElementById('myChart').getContext('2d');
+      var chart = new Chart(ctx, {
+          type: '{{ selected_visual.lower() }}', // Dynamic chart type
+          data: {{ data_output | tojson }},
+          options: {
+              responsive: true,
+              scales: {
+                  x: {
+                      ticks: {
+                          color: 'white'
+                      }
+                  },
+                  y: {
+                      ticks: {
+                          color: 'white'
+                      }
+                  }
+              },
+              plugins: {
+                  legend: {
+                      labels: {
+                          color: 'white'
+                      }
+                  }
+              }
+          }
+      });
+    </script>
+  {% endif %}
+</body>
+</html>
