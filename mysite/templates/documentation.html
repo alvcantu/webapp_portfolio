@@ -42,6 +42,7 @@
         <ul>
           <li><a href="#database-stocks" class="documentation-button">Stocks data mart</a></li>
           <li><a href="#database-southpark" class="documentation-button">South park data mart</a></li>
+          <li><a href="#database-online_retail" class="documentation-button">Online retail data mart</a></li>
         </ul>
       </li>
       <li><a href="#app" class="documentation-button">How app was made</a>
@@ -62,7 +63,7 @@
     <div>
       <section id="database">
         <h2>My database schema.</h2>
-        <h3>Tables that start with SP are part of the South Park data mart, ST are part of Stocks data mart. Arrows represent relationships</h3>
+        <h3>Tables that start with SP are part of the South Park data mart, ST are part of Stocks data mart, ONR are part of sample online retailer data mart. Arrows represent relationships</h3>
         <img src="{{ url_for('static', filename='data_structure_diagram.png') }}" alt="Data Structure Diagram" class="responsive-image">
 
         <section id="database-stocks">
@@ -103,6 +104,14 @@
           <pre><code class="language-python">{{ run_southpark }}</code></pre>
           <h4>All of this is rendered to this HTML dashboard using chart.js for all the visuals and interactions</h4>
           <pre><code class="language-html">{{ dash_southpark }}</code></pre>
+        </section>
+        <section id="database-online_retail">
+          <h2>Online retailer data mart</h2>
+          <h3>Data for this project comes from UC Irvine Machine Learning Respository: https://archive.ics.uci.edu/dataset/352/online+retail</h3>
+          <h3>My intention with this project is to create a self service dashboard in html javascript for tracking invoices for a sample retail store, I learned that is a valuable thing to have at one of my previous employers.</h3>
+          <h4>I first normalize and tharsnform the data so its in mySQL database and can be used in the chatbot and use less space.</h4>
+          <pre><code class="language-python">{{ etl_online_retail }}</code></pre>
+          <h4>Code for dashboard is WORK IN PROGRESS</h4>
         </section>
       </section>
 

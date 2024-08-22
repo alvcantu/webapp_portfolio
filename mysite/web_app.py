@@ -362,7 +362,16 @@ def dash_stocks():
 
     return render_template('dash_stocks.html',
                            company_names=company_names,
-                           company_data=company_data)                           
+                           company_data=company_data)    
+
+@app.route('/dash_online_retail')
+def dash_online_retail():
+
+    # Connect to MySQL database
+    mydb, cursor = get_db_connection()    
+
+
+    return render_template('dash_online_retail.html')                   
 
 
 @app.route('/documentation')
@@ -385,14 +394,16 @@ def documentation():
         'etl_ST_FactPrices':'/home/alvcantu/stocks/etl/etl_ST_FactPrices.py',
         'etl_ST_FactPrices_Forecast':'/home/alvcantu/stocks/etl/etl_ST_FactPrices_Forecast.py',
         'pdf_gen_stocks':'/home/alvcantu/stocks/etl/pdf_gen_stocks.py',
-        'dash_stocks': '/home/alvcantu/mysite/templates/dash_stocks.html'
+        'dash_stocks': '/home/alvcantu/mysite/templates/dash_stocks.html',
+        # Online retail files
+        'etl_online_retail': '/home/alvcantu/online_retail/etl_online_retail.py'
     }
 
     replacements = [
         ('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', 'openrouter_api_key_goes_here'),
         ('h63Efp09-d', 'pw_goes_here'),
         ('alvcantu@icloud.com', 'my_email_goes_here'),
-        ('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','sendgirs_api_key_goes_here')
+        ('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','sendgrid_api_key_goes_here')
     ]
 
     def extract_and_sanitize_code(path):

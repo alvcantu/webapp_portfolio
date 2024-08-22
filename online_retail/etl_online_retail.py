@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import mysql.connector
 from datetime import timedelta
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -21,13 +22,22 @@ def get_db_connection():
 # Clean and convert data types
 def check_data_types(df):
     df['InvoiceNo'] = df['InvoiceNo'].astype(str)
-    df['StockCode'] = df['StockCode'].astype(str)  # Corrected typo
-    df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'])
-    df['Quantity'] = pd.to_numeric(df['Quantity'], errors='coerce').fillna(0).astype(int)  # Assuming 0 for NaN, adjust as needed
-    df['UnitPrice'] = pd.to_numeric(df['UnitPrice'], errors='coerce').fillna(0).round(2)  # Assuming 0 for NaN, rounded to 2 decimal places
-    df['CustomerID'] = pd.to_numeric(df['CustomerID'], errors='coerce').fillna(-1).astype(int)  # Assuming -1 for NaN, adjust as needed
+    df['StockCode'] = df['StockCode'].astype(str)
+
+    # Convert to datetime mySQL understands
+    df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate']).dt.strftime('%Y-%m-%d')
+    
+    # Convert 'Quantity' to integer, which MySQL can understand, errors are filled with 0
+    df['Quantity'] = df['Quantity'].fillna(0).astype(int)
+
+    # Convert 'UnitPrice' to float, which MySQL can understand, errors are filled with 0
+    df['UnitPrice'] = df['UnitPrice'].fillna(0).round(2).astype(float)
+    
+    df['CustomerID'] = df['CustomerID'].astype(str)
     df['Country'] = df['Country'].astype(str)
+    
     return df
+
 
 # Check if there are invoices that make no sense.
 def validate_invoices(df):
@@ -54,12 +64,26 @@ def validate_invoices(df):
 
     if invalid_invoices:
         print(f"Invalid Invoices: {invalid_invoices}")
+        return False
     else:
         print("All invoices are valid.")
+        return True
 
-    return invalid_invoices
 
+# Function to create tables in mySQL database
 def create_tables(cursor):
+    # Delete ONR_FactTransactions if exists
+    drop_fact_transactions = '''
+    DROP TABLE IF EXISTS ONR_FactTransactions;
+    '''
+    cursor.execute(drop_fact_transactions)
+
+    # Delete ONR_DimInvoice if exists
+    drop_dim_invoice = '''
+    DROP TABLE IF EXISTS ONR_DimInvoice;
+    '''
+    cursor.execute(drop_dim_invoice)
+
     # Create ONR_DimInvoice table
     create_dim_invoice = """
     CREATE TABLE IF NOT EXISTS ONR_DimInvoice (
@@ -84,57 +108,50 @@ def create_tables(cursor):
     """
     cursor.execute(create_fact_transactions)
 
-
+# Normalize data (split into two tables) and insert it into mySQL tables after crateing them
 def normalize_and_insert_data(df):
-    # Validate the invoices
-    answ = validate_invoices(df)
-
-    # Proceed only if all invoices are valid
-    if answ != 'All invoices are valid.':
-        print("Invoices are not valid. Data insertion aborted.")
-        return
-
     mydb, cursor = get_db_connection()
 
-    try:
-        # Create tables if they don't exist
-        create_tables(cursor)
-        mydb.commit()
+    # Create tables if they don't exist
+    create_tables(cursor)
 
-        # Normalize data
-        dim_invoice = df[['InvoiceNo', 'CustomerID', 'Country', 'InvoiceDate']].drop_duplicates()
-        fact_transactions = df.drop(['CustomerID', 'Country', 'InvoiceDate'], axis=1)
+    # Normalize data
+    dim_invoice = df[['InvoiceNo', 'CustomerID', 'Country', 'InvoiceDate']].drop_duplicates()
+    fact_transactions = df.drop(['CustomerID', 'Country', 'InvoiceDate'], axis=1)
 
-        # Insert into ONR_DimInvoice
-        for _, row in dim_invoice.iterrows():
-            cursor.execute("""
-            INSERT INTO ONR_DimInvoice (InvoiceID, CustomerID, Country, InvoiceDate)
-            VALUES (%s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE CustomerID=VALUES(CustomerID), Country=VALUES(Country), InvoiceDate=VALUES(InvoiceDate)
-            """, (row['InvoiceNo'], row['CustomerID'], row['Country'], row['InvoiceDate']))
+    # Prepare SQL for insert/update
+    insert_dim_invoice = """
+    INSERT INTO ONR_DimInvoice (InvoiceID, CustomerID, Country, InvoiceDate)
+    VALUES (%s, %s, %s, %s)
+    ON DUPLICATE KEY UPDATE CustomerID=VALUES(CustomerID), Country=VALUES(Country), InvoiceDate=VALUES(InvoiceDate)
+    """
 
-        # Insert into ONR_FactTransactions
-        for _, row in fact_transactions.iterrows():
-            cursor.execute("""
-            INSERT INTO ONR_FactTransactions (InvoiceID, StockCode, Description, Quantity, UnitPrice)
-            VALUES (%s, %s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE StockCode=VALUES(StockCode), Description=VALUES(Description), Quantity=VALUES(Quantity), UnitPrice=VALUES(UnitPrice)
-            """, (row['InvoiceNo'], row['StockCode'], row['Description'], row['Quantity'], row['UnitPrice']))
+    insert_fact_transactions = """
+    INSERT INTO ONR_FactTransactions (InvoiceID, StockCode, Description, Quantity, UnitPrice)
+    VALUES (%s, %s, %s, %s, %s)
+    ON DUPLICATE KEY UPDATE StockCode=VALUES(StockCode), Description=VALUES(Description), 
+    Quantity=VALUES(Quantity), UnitPrice=VALUES(UnitPrice)
+    """
 
-        mydb.commit()
-        print("Data has been successfully inserted into the database.")
+    # Execute batch operations
+    cursor.executemany(insert_dim_invoice, [tuple(row) for row in dim_invoice.to_records(index=False)])
+    cursor.executemany(insert_fact_transactions, [tuple(row) for row in fact_transactions.to_records(index=False)])
 
-    except Error as e:
-        print(f"Error: {e}")
-    finally:
-        if mydb.is_connected():
-            cursor.close()
-            mydb.close()
+    mydb.commit()
+    print("Data has been successfully inserted into the database.")
+
+    cursor.close()
+    mydb.close()
 
 
-# Convert data types
-df = check_data_types(df)
+# Change to datetime so invoice can be validated
+df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'])
 
 # Normalize and insert data into mySQL
-normalize_and_insert_data(df)
+if validate_invoices(df):
+    # Convert data types
+    df = check_data_types(df)
+    normalize_and_insert_data(df)
+else:
+    print("Data insertion aborted due to invalid invoices.")
 
