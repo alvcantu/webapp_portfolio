@@ -413,6 +413,7 @@ def dash_self_service():
         for table in db_description_data_mart.values() for column_name, data_type, *_ in table
     }
 
+    # Classify columns based on their data types, needs rethinking as there are cases where i want to group by a numeric column
     classified_columns = {
         column_name: {
             'name': column_name,
@@ -425,7 +426,7 @@ def dash_self_service():
         }
         for column_name, data_type in columns_with_types.items()
     }
-
+    # Extract dimension and measure columns
     dimension_columns = [column for column, details in classified_columns.items() if details['classification'] == 'dimension']
     measure_columns = [column for column, details in classified_columns.items() if details['classification'] == 'measure']
 
@@ -433,12 +434,14 @@ def dash_self_service():
     default_dimension = dimension_columns[:1]  # Selecting the first dimension as default
     default_measure = measure_columns[:1]  # Selecting the first measure as default
 
+    # Get selected dimensions and measures from the form
     selected_dimensions = request.form.getlist('selected_dimensions') or default_dimension
     selected_measures = request.form.getlist('selected_measures') or default_measure
 
     # Default visualization type
     selected_visual = request.form.get('selected_visual', 'Table')
 
+    # Prompt for OpenRouter API to generate SQL query
     prompt = f"""
     Given the following database schema with column comments for context:
     {db_description_data_mart}
@@ -449,25 +452,29 @@ def dash_self_service():
     {selected_dimensions}
     """
 
+    # Send the prompt to OpenRouter API
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
     }
     data = {
-        "model": "openrouter/auto", #switch to meta-llama/llama-3.1-8b-instruct:free to use free model
+        "model": "openrouter/auto",
         "messages": [
             {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to be executed."},
             {"role": "user", "content": prompt}
         ]
     }
 
+    # Parsing the response from OpenRouter API and cleaning up the SQL query
     response = requests.post(url, headers=headers, json=data)
     sql_query_unclean = response.json()['choices'][0]['message']['content']
     sql_query = extract_sql_query(sql_query_unclean)
 
+    # Execute the SQL query and get the data output
     cursor.execute(sql_query)
     data_output = cursor.fetchall()
 
+    # Conditional logic to handle different visualization types, table (DataTables) or chart (charts.js)
     if selected_visual == 'Table':
         data_output_html = get_table_html(sql_query)
     else:
@@ -503,6 +510,7 @@ def documentation():
     paths = {
         'web_app': '/home/alvcantu/mysite/web_app.py',
         'presentation_generator': '/home/alvcantu/presentation_generator.py',
+        'dash_self_service': '/home/alvcantu/mysite/templates/dash_self_service.html',
         # South Park files
         'run_southpark': '/home/alvcantu/run_southpark.py',
         'character_details_spider': '/home/alvcantu/southpark/southpark/spiders/character_details_spider.py',
