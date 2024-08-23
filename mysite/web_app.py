@@ -81,7 +81,28 @@ def get_db_description(data_mart=None):
 
     return db_description
 
-#Extract sql query from LLM's generated response
+# Check if the query is read-only
+def is_read_only_query(sql_query):
+    """
+    Parses the SQL query and checks if it is read-only.
+    
+    Args:
+        sql_query (str): The SQL query to check.
+    
+    Returns:
+        bool: True if the query is read-only, otherwise False.
+        str: Error message if the query is not read-only.
+    """
+    # Parse the SQL query
+    parsed = sqlparse.parse(sql_query)[0]
+
+    # Check if the query is read-only
+    if parsed.get_type().upper() not in ['SELECT', 'SHOW', 'DESCRIBE', 'DESC', 'EXPLAIN']:
+        return False, "Error: Only read-only queries are allowed to avoid modifying the dataset."
+    
+    return True, None
+
+# Extract sql query from LLM's generated response
 def extract_sql_query(text):
     # Define a regex pattern to match SQL queries including those that start with CTEs
     pattern = r'(?i)(WITH\s+.*?AS\s+\(.*?\)\s*(?=(SELECT|INSERT INTO|UPDATE|DELETE FROM|CREATE TABLE|ALTER TABLE|DROP TABLE|TRUNCATE TABLE|GRANT|REVOKE|COMMIT|ROLLBACK|SAVEPOINT|SET TRANSACTION|MERGE))|SELECT|INSERT INTO|UPDATE|DELETE FROM|CREATE TABLE|ALTER TABLE|DROP TABLE|TRUNCATE TABLE|GRANT|REVOKE|COMMIT|ROLLBACK|SAVEPOINT|SET TRANSACTION|MERGE).*?;'
@@ -92,15 +113,22 @@ def extract_sql_query(text):
         return match.group(0)
     return None
 
-
 # To get html table from a SQL query, executes to DB, transforms to dataframe, then to html.
 def get_table_html(sql_query):
-    # Parse the SQL query
-    parsed = sqlparse.parse(sql_query)[0]
-
-    # Check if the query is read-only to avoid user modified the database, else show error
-    if parsed.get_type().upper() not in ['SELECT', 'SHOW', 'DESCRIBE', 'DESC', 'EXPLAIN']:
-        return "Error: Only read-only queries are allowed to avoid modified the dataset."
+    """
+    Executes a SQL query on the database, converts the results to a pandas DataFrame, 
+    and then to an HTML table.
+    
+    Args:
+        sql_query (str): The SQL query to execute.
+    
+    Returns:
+        str: HTML table if the query is successful, otherwise an error message.
+    """
+    # Check if the query is read-only
+    is_read_only, error_message = is_read_only_query(sql_query)
+    if not is_read_only:
+        return error_message
 
     try:
         # Connect to MySQL database
@@ -126,7 +154,6 @@ def get_table_html(sql_query):
             cursor.close()
         if 'mydb' in locals():
             mydb.close()
-
 # Create data structure diagram for documentation and user view
 def create_data_structure_diagram(db_description, output_folder):
     dot = Digraph(comment='Data Structure Diagram')
@@ -470,28 +497,33 @@ def dash_self_service():
     sql_query_unclean = response.json()['choices'][0]['message']['content']
     sql_query = extract_sql_query(sql_query_unclean)
 
-    # Execute the SQL query and get the data output
-    cursor.execute(sql_query)
-    data_output = cursor.fetchall()
-
-    # Conditional logic to handle different visualization types, table (DataTables) or chart (charts.js)
-    if selected_visual == 'Table':
-        data_output_html = get_table_html(sql_query)
+    # Check if the query is read-only
+    is_read_only, error_message = is_read_only_query(sql_query)
+    if not is_read_only:
+        return error_message
     else:
-        chart_data = {
-            'labels': [row[0] for row in data_output],  # Assuming the first column is for labels
-            'datasets': [
-                {
-                    'label': measure,
-                    'data': [row[i] for row in data_output],  # Index according to measure column position
-                    'backgroundColor': 'rgba(255, 99, 132, 0.2)',  # Example color
-                    'borderColor': 'rgba(255, 99, 132, 1)',
-                    'borderWidth': 1,
-                    'fill': True if selected_visual == 'Area' else False
-                } for i, measure in enumerate(selected_measures, start=1)
-            ]
-        }
-        data_output_html = chart_data
+        # Execute the SQL query and get the data output
+        cursor.execute(sql_query)
+        data_output = cursor.fetchall()
+
+        # Conditional logic to handle different visualization types, table (DataTables) or chart (charts.js)
+        if selected_visual == 'Table':
+            data_output_html = get_table_html(sql_query)
+        else:
+            chart_data = {
+                'labels': [row[0] for row in data_output],  # Assuming the first column is for labels
+                'datasets': [
+                    {
+                        'label': measure,
+                        'data': [row[i] for row in data_output],  # Index according to measure column position
+                        'backgroundColor': 'rgba(255, 99, 132, 0.2)',  # Example color
+                        'borderColor': 'rgba(255, 99, 132, 1)',
+                        'borderWidth': 1,
+                        'fill': True if selected_visual == 'Area' else False
+                    } for i, measure in enumerate(selected_measures, start=1)
+                ]
+            }
+            data_output_html = chart_data
 
     return render_template('dash_self_service.html',
                            data_mart_list=data_mart_list,
@@ -502,8 +534,6 @@ def dash_self_service():
                            selected_measures=selected_measures,
                            selected_visual=selected_visual,
                            data_output=data_output_html)
-               
-
 
 @app.route('/documentation')
 def documentation():
