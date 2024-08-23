@@ -1,6 +1,7 @@
 from flask import Flask, request, render_template, url_for, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 import re
+import csv
 import requests
 import json
 import mysql.connector
@@ -189,6 +190,16 @@ def create_data_structure_diagram(db_description, output_folder):
     output_path = os.path.join(output_folder, 'data_structure_diagram')
     dot.render(output_path, format='png', cleanup=True, engine='dot')
 
+# Function to load the datamart mapping into a dictionary
+# Path to the CSV file
+datamart_mapping_path = '/home/alvcantu/mysite/static/datamart_mapping.csv'
+def load_datamart_mapping():
+    with open(datamart_mapping_path, mode='r') as file:
+        reader = csv.DictReader(file)
+        return {row['code']: row['datamart'] for row in reader}
+
+# Load the datamart mapping when the app starts
+datamart_mapping = load_datamart_mapping()
 # Extracts information for each table in database
 db_description = get_db_description()
 # Converts db_description into diagram thats used in documentation
@@ -421,35 +432,56 @@ def dash_stocks():
 def dash_self_service():
 
     # Connect to MySQL database
-    mydb, cursor = get_db_connection()    
+    mydb, cursor = get_db_connection()  
 
     # Datamart selector query
     data_mart_list = get_db_data_marts()
 
+    # Map the datamarts to readable names
+    mapped_data_marts = [(code, datamart_mapping.get(code, code)) for code in data_mart_list]
+
     # Set default selections if not provided
     default_datamart = data_mart_list[0] if data_mart_list else ''
-    selected_datamart = request.form.get('selected_datamart', default_datamart)
+    selected_datamart = request.form.get('selected_datamart', default_datamart)  
 
     # Aggregation function selection
     selected_aggregation = request.form.get('selected_aggregation', 'Average')
 
-    # Gathers db description for selected data mart
+    # Define exceptions for column classifications
+    classification_exceptions = {
+        'SP': {
+            'season': 'dimension'
+        },
+        # Add more data marts and their exceptions here
+    }
+
+    # Function to classify columns based on their data types with exceptions inccluded
+    def get_column_classification(data_mart, column_name, data_type):
+        # Check if there's an exception for this column in the given data mart
+        if data_mart in classification_exceptions and column_name in classification_exceptions[data_mart]:
+            return classification_exceptions[data_mart][column_name]
+        
+        # Default classification logic
+        if any(data_type.startswith(t) for t in ('varchar', 'char', 'text', 'date')):
+            return "dimension"
+        elif any(data_type.startswith(t) for t in ('int', 'float')):
+            return "measure"
+        else:
+            return "other"
+
+    # Your existing code to gather db description
     db_description_data_mart = get_db_description(selected_datamart) 
     columns_with_types = {
         column_name: data_type.decode() if isinstance(data_type, bytes) else str(data_type)
         for table in db_description_data_mart.values() for column_name, data_type, *_ in table
     }
 
-    # Classify columns based on their data types, needs rethinking as there are cases where i want to group by a numeric column
+    # Classify columns with exceptions
     classified_columns = {
         column_name: {
             'name': column_name,
             'type': data_type,
-            'classification': (
-                "dimension" if any(data_type.startswith(t) for t in ('varchar', 'char', 'text', 'date')) else
-                "measure" if any(data_type.startswith(t) for t in ('int', 'float')) else
-                "other"
-            )
+            'classification': get_column_classification(selected_datamart, column_name, data_type)
         }
         for column_name, data_type in columns_with_types.items()
     }
@@ -473,7 +505,7 @@ def dash_self_service():
     Given the following database schema with column comments for context:
     {db_description_data_mart}
 
-    Generate a query that calculates the {selected_aggregation} these measures:
+    Generate a query that calculates the {selected_aggregation} of these measures:
     {selected_measures}
     And groups them by these dimensions:
     {selected_dimensions}
@@ -526,7 +558,7 @@ def dash_self_service():
             data_output_html = chart_data
 
     return render_template('dash_self_service.html',
-                           data_mart_list=data_mart_list,
+                           data_mart_list=mapped_data_marts,
                            dimension_columns=dimension_columns,
                            measure_columns=measure_columns,
                            selected_datamart=selected_datamart,
@@ -540,7 +572,6 @@ def documentation():
     paths = {
         'web_app': '/home/alvcantu/mysite/web_app.py',
         'presentation_generator': '/home/alvcantu/presentation_generator.py',
-        'dash_self_service': '/home/alvcantu/mysite/templates/dash_self_service.html',
         # South Park files
         'run_southpark': '/home/alvcantu/run_southpark.py',
         'character_details_spider': '/home/alvcantu/southpark/southpark/spiders/character_details_spider.py',
@@ -582,7 +613,7 @@ def documentation():
 
     template_variables = {key: extract_and_sanitize_code(path) for key, path in paths.items()}
 
-    return render_template('documentation.html', **template_variables)
+    return render_template('documentation.html', datamart_mapping=datamart_mapping,**template_variables)
 
 @app.route('/')
 def index():

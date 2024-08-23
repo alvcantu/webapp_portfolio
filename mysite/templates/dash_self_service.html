@@ -21,6 +21,17 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.1/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.2.1/chartjs-plugin-zoom.min.js"></script> 
+  <!-- jQuery -->
+  <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- DataTables JS -->
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+  <!-- DataTables Buttons JS -->
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/dataTables.buttons.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.html5.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.print.min.js"></script>
 </head>
 <body>
 
@@ -51,8 +62,8 @@
   <form id="filterForm" method="POST">
     <label for="selected_datamart">Datamart:</label>
     <select name="selected_datamart" id="selected_datamart" onchange="document.getElementById('filterForm').submit();">
-      {% for datamart in data_mart_list %}
-      <option value="{{ datamart }}" {% if selected_datamart == datamart %}selected{% endif %}>{{ datamart }}</option>
+      {% for code, name in data_mart_list %}
+      <option value="{{ code }}" {% if selected_datamart == code %}selected{% endif %}>{{ name }}</option>
       {% endfor %}
     </select>
   
@@ -94,13 +105,34 @@
     </select>
   
     <!-- Update Visual Button -->
-    <button type="submit" id="send-button" style="margin-top: 1vh;">Update Visual</button>
+    <button type="submit" id="update-visual-button" style="margin-top: 1vh;">Update Visual</button>
   </form>
   
-  <!--DataTable or chart.js-->
+  <!--DataTable-->
   {% if selected_visual == 'Table' %}
     <div class="table-container">{{ data_output | safe }}</div>
+    <script>
+    // JS for DataTables (currently not integrated)
+    $(document).ready(function() {
+      if (document.getElementById('myTable')) {
+        $('#myTable').DataTable({
+          dom: 'Bfrtip',
+          buttons: [
+            'copy', 'csv', 'excel', 'pdf', 'print'
+          ],
+          pageLength: 20,  // Display 20 rows per page
+          lengthMenu: [[10, 20, 50, -1], [10, 20, 50, "All"]],  // Allow user to change page length
+          deferRender: true,  // Defer rendering of table rows until they are to be displayed
+          scrollY: 400,      // Enable vertical scrolling if needed
+          scrollCollapse: true,
+          scroller: true,    // Enable Scroller extension for virtual scrolling
+          // serverSide: true,  // Uncomment this if you're using server-side processing
+        });
+      }
+    });
+    </script>
   {% else %}
+  <!--Chart.js-->
     <canvas id="myChart"></canvas>
     <script>
       var ctx = document.getElementById('myChart').getContext('2d');
@@ -130,31 +162,6 @@
               }
           }
       });
-    </script>
-    
-    <!-- DataTables JS -->
-    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
-    <!-- DataTables Buttons JS -->
-    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/dataTables.buttons.min.js"></script>
-    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.html5.min.js"></script>
-    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.print.min.js"></script>
-
-    <script>
-      // JS for DataTables (currently not integrated)
-      window.onload = function() {
-          scrollToBottom();
-          if (document.getElementById('myTable')) {
-              $('#myTable').DataTable({
-                  dom: 'Bfrtip',
-                  buttons: [
-                      'copy', 'csv', 'excel', 'pdf', 'print'
-                  ],
-              });
-          }
-      };
     </script>
   {% endif %}
   

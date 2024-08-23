@@ -64,7 +64,10 @@
     <div>
       <section id="database">
         <h2>My database schema.</h2>
-        <h3>Tables that start with SP are part of the South Park data mart, ST are part of Stocks data mart, ONR are part of sample online retailer data mart. Arrows represent relationships</h3>
+        <h3 style="text-align: center;">Table codes map to the following datamarts. Arrows represent relationships</h3>
+        {% for code, name in datamart_mapping.items() %}
+          <h3 style="text-align: center;">{{ code }}, {{ name }}</h3>
+        {% endfor %}
         <img src="{{ url_for('static', filename='data_structure_diagram.png') }}" alt="Data Structure Diagram" class="responsive-image">
 
         <section id="database-stocks">
