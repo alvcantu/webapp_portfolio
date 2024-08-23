@@ -403,6 +403,9 @@ def dash_self_service():
     default_datamart = data_mart_list[0] if data_mart_list else ''
     selected_datamart = request.form.get('selected_datamart', default_datamart)
 
+    # Aggregation function selection
+    selected_aggregation = request.form.get('selected_aggregation', 'Average')
+
     # Gathers db description for selected data mart
     db_description_data_mart = get_db_description(selected_datamart) 
     columns_with_types = {
@@ -440,8 +443,10 @@ def dash_self_service():
     Given the following database schema with column comments for context:
     {db_description_data_mart}
 
-    Generate a query that contains only these columns:
-    {selected_dimensions + selected_measures}
+    Generate a query that calculates the {selected_aggregation} these measures:
+    {selected_measures}
+    And groups them by these dimensions:
+    {selected_dimensions}
     """
 
     url = "https://openrouter.ai/api/v1/chat/completions"
@@ -449,7 +454,7 @@ def dash_self_service():
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
     }
     data = {
-        "model": "openrouter/auto",
+        "model": "openrouter/auto", #switch to meta-llama/llama-3.1-8b-instruct:free to use free model
         "messages": [
             {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to be executed."},
             {"role": "user", "content": prompt}

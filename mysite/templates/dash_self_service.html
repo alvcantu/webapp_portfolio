@@ -18,6 +18,9 @@
   <!-- References CSS styling -->
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.1/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.2.1/chartjs-plugin-zoom.min.js"></script> 
 </head>
 <body>
 
@@ -40,12 +43,11 @@
   <!-- References Javascript logic for sidebar button and menu -->
   <script src="{{ url_for('static', filename='scripts.js') }}"></script>
   
-  <h1>Work in progress</h1>
+  <h1>Data Self-Service Dashboard</h1>
 
-  <!-- Input boxes for everything-->
   <form id="filterForm" method="POST">
     <label for="selected_datamart">Datamart:</label>
-    <select name="selected_datamart" id="selected_datamart" onchange="this.form.submit()">
+    <select name="selected_datamart" id="selected_datamart" onchange="document.getElementById('filterForm').submit();">
       {% for datamart in data_mart_list %}
       <option value="{{ datamart }}" {% if selected_datamart == datamart %}selected{% endif %}>{{ datamart }}</option>
       {% endfor %}
@@ -69,18 +71,32 @@
       {% endfor %}
     </div>
   
-    <label for="selected_visual">Visualization Type:</label>
-    <select name="selected_visual" id="selected_visual" onchange="this.form.submit()">
+    <!-- Aggregation Function Selection -->
+    <label for="selected_aggregation" style="margin-top: 1vh;">Aggregation Function:</label>
+    <select name="selected_aggregation" id="selected_aggregation">
+      <option value="Average" {% if selected_aggregation == 'Average' %}selected{% endif %}>Average</option>
+      <option value="Sum" {% if selected_aggregation == 'Sum' %}selected{% endif %}>Sum</option>
+      <option value="Median" {% if selected_aggregation == 'Median' %}selected{% endif %}>Median</option>
+      <option value="Max" {% if selected_aggregation == 'Max' %}selected{% endif %}>Max</option>
+      <option value="Min" {% if selected_aggregation == 'Min' %}selected{% endif %}>Min</option>
+      <option value="Count" {% if selected_aggregation == 'Count' %}selected{% endif %}>Count</option>
+    </select>
+  
+    <!-- Visualization Type Selection -->
+    <label for="selected_visual" style="margin-top: 1vh;">Visualization Type:</label>
+    <select name="selected_visual" id="selected_visual">
       <option value="Table" {% if selected_visual == 'Table' %}selected{% endif %}>Table</option>
-      <option value="Area" {% if selected_visual == 'Area' %}selected{% endif %}>Area</option>
       <option value="Line" {% if selected_visual == 'Line' %}selected{% endif %}>Line</option>
       <option value="Bar" {% if selected_visual == 'Bar' %}selected{% endif %}>Bar</option>
     </select>
+  
+    <!-- Update Visual Button -->
+    <button type="submit" id="send-button" style="margin-top: 1vh;">Update Visual</button>
   </form>
   
-  <!--- Visual with user selection and backend filtering pre-done-->
+  <!--DataTable or chart.js-->
   {% if selected_visual == 'Table' %}
-    <div>{{ data_output | safe }}</div>
+    <div class="table-container">{{ data_output | safe }}</div>
   {% else %}
     <canvas id="myChart"></canvas>
     <script>
@@ -112,6 +128,32 @@
           }
       });
     </script>
+    
+    <!-- DataTables JS -->
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+    <!-- DataTables Buttons JS -->
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/dataTables.buttons.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.html5.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.print.min.js"></script>
+
+    <script>
+      // JS for DataTables
+      window.onload = function() {
+          scrollToBottom();
+          if (document.getElementById('myTable')) {
+              $('#myTable').DataTable({
+                  dom: 'Bfrtip',
+                  buttons: [
+                      'copy', 'csv', 'excel', 'pdf', 'print'
+                  ],
+              });
+          }
+      };
+    </script>
   {% endif %}
+  
 </body>
 </html>
