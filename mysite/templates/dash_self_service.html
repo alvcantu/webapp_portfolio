@@ -101,6 +101,7 @@
     <select name="selected_visual" id="selected_visual">
       <option value="Table" {% if selected_visual == 'Table' %}selected{% endif %}>Table</option>
       <option value="Line" {% if selected_visual == 'Line' %}selected{% endif %}>Line</option>
+      <option value="Area" {% if selected_visual == 'Area' %}selected{% endif %}>Area</option>
       <option value="Bar" {% if selected_visual == 'Bar' %}selected{% endif %}>Bar</option>
     </select>
   
@@ -133,14 +134,19 @@
     </script>
   {% else %}
   <!--Chart.js-->
-    <canvas id="myChart"></canvas>
+    <canvas id="self-service-chart"></canvas>
     <script>
-      var ctx = document.getElementById('myChart').getContext('2d');
+      var ctx = document.getElementById('self-service-chart').getContext('2d');
       var chart = new Chart(ctx, {
           type: '{{ selected_visual.lower() }}', // Dynamic chart type
           data: {{ data_output | tojson }},
           options: {
-              responsive: true,
+              layout: {
+                  padding: {
+                      top: 20,    // Add top padding
+                      bottom: 20  // Add bottom padding
+                  }
+              },
               scales: {
                   x: {
                       ticks: {
@@ -164,6 +170,6 @@
       });
     </script>
   {% endif %}
-  
+
 </body>
 </html>

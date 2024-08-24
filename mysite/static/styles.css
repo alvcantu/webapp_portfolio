@@ -461,3 +461,10 @@ select option {
 .dataTables_wrapper .dt-buttons button:hover {
   background-color: #3c3c3c !important;
 }
+
+/* Responsive styles for self-service chart */
+#self-service-chart {
+  width: 85% !important;
+  margin: auto; /* This centers the canvas if you want */
+  padding: 20px 0; /* Adds padding top and bottom */
+}

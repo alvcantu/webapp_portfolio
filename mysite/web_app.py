@@ -5,6 +5,8 @@ import csv
 import requests
 import json
 import mysql.connector
+from mysql.connector import Error
+from html import escape
 import pandas as pd
 import os
 from graphviz import Digraph
@@ -509,6 +511,8 @@ def dash_self_service():
     {selected_measures}
     And groups them by these dimensions:
     {selected_dimensions}
+
+    Only use the tables in the datamart {selected_datamart}.
     """
 
     # Send the prompt to OpenRouter API
@@ -529,33 +533,58 @@ def dash_self_service():
     sql_query_unclean = response.json()['choices'][0]['message']['content']
     sql_query = extract_sql_query(sql_query_unclean)
 
-    # Check if the query is read-only
-    is_read_only, error_message = is_read_only_query(sql_query)
-    if not is_read_only:
-        return error_message
-    else:
-        # Execute the SQL query and get the data output
-        cursor.execute(sql_query)
-        data_output = cursor.fetchall()
+    # Execute the SQL query and get the data output
+    def execute_and_visualize(sql_query, selected_visual, selected_measures):
+        is_read_only, error_message = is_read_only_query(sql_query)
+        if not is_read_only:
+            return f"Error: Query is not read-only. {error_message}"
+        
+        try:
+            mydb, cursor = get_db_connection()
+            
+            cursor.execute(sql_query)
+            data_output = cursor.fetchall()
+            
+            if selected_visual == 'Table':
+                data_output_html = get_table_html(sql_query)
+            else:
+                # Prepare chart data
+                if data_output:
+                    chart_data = {
+                        'labels': [row[0] for row in data_output if row],
+                        'datasets': [
+                            {
+                                'label': measure,
+                                'data': [row[i] for row in data_output if len(row) > i],
+                                'backgroundColor': 'rgba(255, 99, 132, 0.2)',
+                                'borderColor': 'rgba(255, 99, 132, 1)',
+                                'borderWidth': 1,
+                                'fill': True if selected_visual == 'Area' else False
+                            } for i, measure in enumerate(selected_measures, start=1)
+                        ]
+                    }
+                else:
+                    chart_data = {'labels': [], 'datasets': []}
+                data_output_html = chart_data
 
-        # Conditional logic to handle different visualization types, table (DataTables) or chart (charts.js)
-        if selected_visual == 'Table':
-            data_output_html = get_table_html(sql_query)
-        else:
-            chart_data = {
-                'labels': [row[0] for row in data_output],  # Assuming the first column is for labels
-                'datasets': [
-                    {
-                        'label': measure,
-                        'data': [row[i] for row in data_output],  # Index according to measure column position
-                        'backgroundColor': 'rgba(255, 99, 132, 0.2)',  # Example color
-                        'borderColor': 'rgba(255, 99, 132, 1)',
-                        'borderWidth': 1,
-                        'fill': True if selected_visual == 'Area' else False
-                    } for i, measure in enumerate(selected_measures, start=1)
-                ]
-            }
-            data_output_html = chart_data
+            return data_output_html
+
+        except Error as e:
+            # If there's a MySQL error, return the query for debugging
+            return f"MySQL Error:\nQuery: {escape(sql_query)}\nError: {str(e)}"
+        
+        except Exception as e:
+            # Catch any other unexpected errors
+            return f"Unexpected Error:\nQuery: {escape(sql_query)}\nError: {str(e)}"
+        
+        finally:
+            if 'cursor' in locals() and cursor:
+                cursor.close()
+            if 'mydb' in locals() and mydb.is_connected():
+                mydb.close()
+
+    data_output_html = execute_and_visualize(sql_query, selected_visual, selected_measures)
+
 
     return render_template('dash_self_service.html',
                            data_mart_list=mapped_data_marts,
