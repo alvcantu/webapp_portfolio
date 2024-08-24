@@ -511,8 +511,6 @@ def dash_self_service():
     {selected_measures}
     And groups them by these dimensions:
     {selected_dimensions}
-
-    Only use the tables in the datamart {selected_datamart}.
     """
 
     # Send the prompt to OpenRouter API

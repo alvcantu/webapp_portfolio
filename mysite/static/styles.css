@@ -464,7 +464,6 @@ select option {
 
 /* Responsive styles for self-service chart */
 #self-service-chart {
-  width: 85% !important;
+  width: 90% !important;
   margin: auto; /* This centers the canvas if you want */
-  padding: 20px 0; /* Adds padding top and bottom */
 }

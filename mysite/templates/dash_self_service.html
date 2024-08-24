@@ -143,17 +143,27 @@
           options: {
               layout: {
                   padding: {
-                      top: 20,    // Add top padding
-                      bottom: 20  // Add bottom padding
+                      top: 10,    // Add top padding
+                      bottom: 10  // Add bottom padding
                   }
               },
               scales: {
                   x: {
+                      title: {
+                          display: true,
+                          text: '{{ selected_dimensions }}',
+                          color: 'white'
+                      },
                       ticks: {
                           color: 'white'
                       }
                   },
                   y: {
+                      title: {
+                          display: true,
+                          text: '{{ selected_measures }}',
+                          color: 'white'
+                      },
                       ticks: {
                           color: 'white'
                       }
