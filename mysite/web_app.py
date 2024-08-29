@@ -242,7 +242,7 @@ def db_chatbot():
         data = {
             "model": "openrouter/auto",  # You can change this to another model if needed
             "messages": [
-                {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to executed."},
+                {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to executed. Doing it step by step."},
                 {"role": "user", "content": prompt}
             ]
         }
@@ -252,6 +252,8 @@ def db_chatbot():
 
         # Extract only the query from the sql query response
         sql_query = extract_sql_query(sql_query_unclean)
+        # Add limit to the query to prevent data from being too large
+        sql_query = sql_query.rstrip(';') + ' LIMIT 6900;'
 
         # Get html table from generated sql query
         table_html = get_table_html(sql_query)
@@ -532,7 +534,7 @@ def dash_self_service():
     data = {
         "model": "openrouter/auto",
         "messages": [
-            {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to be executed."},
+            {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to be executed. Doing it step by step."},
             {"role": "user", "content": prompt}
         ]
     }

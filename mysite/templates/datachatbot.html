@@ -81,6 +81,7 @@
             {% endif %}
             {% if table_html %}
                 <div class="message bot-message">
+                    <h5>Data limited to 6900 rows, be more specific if your query returns more than that.</h5>
                     <div class="table-container">
                         {{ table_html|safe }}
                     </div>
