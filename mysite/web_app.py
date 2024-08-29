@@ -84,6 +84,9 @@ def get_db_description(data_mart=None):
 
     return db_description
 
+# Extracts information for each table in database
+db_description = get_db_description()
+
 # Check if the query is read-only
 def is_read_only_query(sql_query):
     """
@@ -163,27 +166,37 @@ def create_data_structure_diagram(db_description, output_folder):
     dot.attr(rankdir='TB', size='2', dpi='300')
     dot.attr('node', shape='record', style='filled', fillcolor='lightblue')
 
+    def format_data_type(data_type, key_type):
+        # Remove parameters from data types like decimal(10,2), varchar(255)
+        base_type = data_type.split('(')[0] if '(' in data_type else data_type
+        # For enum and set, we'll just use the base type for simplicity
+        return f"{base_type} ({key_type})"
+
     # First pass: Create nodes
     for table_name, columns in db_description.items():
         label = f"{{{table_name}|"
-        label += "|".join([f"{col[0]} : {col[1].decode()} ({col[3]})" for col in columns])
-        label += "}"
+        for col in columns:
+            col_name, data_type, _, key_type = col[:4]  # Assuming at least these four elements
+            display_type = format_data_type(data_type, key_type)
+            label += f"{col_name} : {display_type}|"
+        label = label.rstrip('|') + "}"  # Remove trailing | and close the record
         dot.node(table_name, label)
 
     # Second pass: Create edges based on foreign key relationships
     for table_name, columns in db_description.items():
         for col in columns:
-            # Skip date columns
-            if 'date' in col[1].decode().lower():
+            col_name, data_type = col[0], col[1]
+            # Skip non-relational types
+            if any(skip_type in data_type.lower() for skip_type in ['date', 'time', 'year', 'timestamp', 'datetime', 'decimal', 'float', 'double', 'real', 'json']):
                 continue
             # Check other tables for a primary key matching this column name
             for other_table, other_columns in db_description.items():
                 if other_table != table_name:
                     for other_col in other_columns:
-                        if other_col[0] == col[0] and other_col[3] == 'PRI':
+                        if other_col[0] == col_name and other_col[3] == 'PRI':
                             # Found a foreign key relationship
                             dot.edge(table_name, other_table,
-                                     label=f"{col[0]} -> {other_col[0]}",
+                                     label=f"{col_name} -> {other_col[0]}",
                                      fontsize='10')
 
     # Create the output folder if it doesn't exist
@@ -202,8 +215,6 @@ def load_datamart_mapping():
 
 # Load the datamart mapping when the app starts
 datamart_mapping = load_datamart_mapping()
-# Extracts information for each table in database
-db_description = get_db_description()
 # Converts db_description into diagram thats used in documentation
 create_data_structure_diagram(db_description, '/home/alvcantu/mysite/static')
 

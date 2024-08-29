@@ -26,16 +26,15 @@ def check_data_types(df):
 
     # Convert to datetime mySQL understands
     df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate']).dt.strftime('%Y-%m-%d')
-    
-    # Convert 'Quantity' to integer, which MySQL can understand, errors are filled with 0
-    df['Quantity'] = df['Quantity'].fillna(0).astype(int)
 
-    # Convert 'UnitPrice' to float, which MySQL can understand, errors are filled with 0
-    df['UnitPrice'] = df['UnitPrice'].fillna(0).round(2).astype(float)
-    
+    # Convert to native Python int and float
+    df['Quantity'] = df['Quantity'].fillna(0).astype('int32').tolist()  # Convert to list to get Python int
+    df['UnitPrice'] = df['UnitPrice'].fillna(0).round(2).astype('float32').tolist()  # Convert to list for Python float
+
+
     df['CustomerID'] = df['CustomerID'].astype(str)
     df['Country'] = df['Country'].astype(str)
-    
+
     return df
 
 
@@ -108,7 +107,7 @@ def create_tables(cursor):
     """
     cursor.execute(create_fact_transactions)
 
-# Normalize data (split into two tables) and insert it into mySQL tables after crateing them
+# Normalize data (split into two tables) and insert it into mySQL tables after creating them
 def normalize_and_insert_data(df):
     mydb, cursor = get_db_connection()
 
@@ -117,7 +116,10 @@ def normalize_and_insert_data(df):
 
     # Normalize data
     dim_invoice = df[['InvoiceNo', 'CustomerID', 'Country', 'InvoiceDate']].drop_duplicates()
-    fact_transactions = df.drop(['CustomerID', 'Country', 'InvoiceDate'], axis=1)
+    fact_transactions = df[['InvoiceNo', 'StockCode', 'Description', 'Quantity', 'UnitPrice']]
+
+    # Fill NaN values with appropriate defaults
+    fact_transactions = fact_transactions.fillna({'Description': '', 'Quantity': 0, 'UnitPrice': 0.0})
 
     # Prepare SQL for insert/update
     insert_dim_invoice = """
@@ -129,16 +131,33 @@ def normalize_and_insert_data(df):
     insert_fact_transactions = """
     INSERT INTO ONR_FactTransactions (InvoiceID, StockCode, Description, Quantity, UnitPrice)
     VALUES (%s, %s, %s, %s, %s)
-    ON DUPLICATE KEY UPDATE StockCode=VALUES(StockCode), Description=VALUES(Description), 
+    ON DUPLICATE KEY UPDATE StockCode=VALUES(StockCode), Description=VALUES(Description),
     Quantity=VALUES(Quantity), UnitPrice=VALUES(UnitPrice)
     """
 
-    # Execute batch operations
-    cursor.executemany(insert_dim_invoice, [tuple(row) for row in dim_invoice.to_records(index=False)])
-    cursor.executemany(insert_fact_transactions, [tuple(row) for row in fact_transactions.to_records(index=False)])
+    # Define chunk size
+    chunk_size = 1000  # Adjust this based on your needs and the size of your data
 
-    mydb.commit()
-    print("Data has been successfully inserted into the database.")
+    # Insert data in chunks for dim_invoice
+    for start in range(0, len(dim_invoice), chunk_size):
+        end = start + chunk_size
+        dim_invoice_chunk = dim_invoice.iloc[start:end]
+        dim_invoice_data = [tuple(row) for row in dim_invoice_chunk.to_records(index=False)]
+        cursor.executemany(insert_dim_invoice, dim_invoice_data)
+        mydb.commit()  # Commit after each chunk
+
+    # Insert data in chunks for fact_transactions
+    for start in range(0, len(fact_transactions), chunk_size):
+        end = start + chunk_size
+        fact_transactions_chunk = fact_transactions.iloc[start:end]
+        fact_transactions_data = [
+            tuple([item if not isinstance(item, (np.int64, np.float64)) else item.item() for item in row])
+            for row in fact_transactions_chunk.to_records(index=False)
+        ]
+        cursor.executemany(insert_fact_transactions, fact_transactions_data)
+        mydb.commit()  # Commit after each chunk
+
+    print("Data has been successfully inserted into the database in chunks.")
 
     cursor.close()
     mydb.close()
