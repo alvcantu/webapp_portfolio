@@ -113,7 +113,7 @@
   {% if selected_visual == 'Table' %}
     <div class="table-container">{{ data_output | safe }}</div>
     <script>
-    // JS for DataTables (currently not integrated)
+    // JS for DataTables
     $(document).ready(function() {
       if (document.getElementById('myTable')) {
         $('#myTable').DataTable({
@@ -122,12 +122,8 @@
             'copy', 'csv', 'excel', 'pdf', 'print'
           ],
           pageLength: 20,  // Display 20 rows per page
-          lengthMenu: [[10, 20, 50, -1], [10, 20, 50, "All"]],  // Allow user to change page length
+          lengthMenu: [[10, 20, 50, -1], [10, 20, 50]],  // Allow user to change page length
           deferRender: true,  // Defer rendering of table rows until they are to be displayed
-          scrollY: 400,      // Enable vertical scrolling if needed
-          scrollCollapse: true,
-          scroller: true,    // Enable Scroller extension for virtual scrolling
-          // serverSide: true,  // Uncomment this if you're using server-side processing
         });
       }
     });

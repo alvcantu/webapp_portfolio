@@ -479,7 +479,7 @@ def dash_self_service():
         # Default classification logic
         if any(data_type.startswith(t) for t in ('varchar', 'char', 'text', 'date')):
             return "dimension"
-        elif any(data_type.startswith(t) for t in ('int', 'float')):
+        elif any(data_type.startswith(t) for t in ('int', 'float','decimal')):
             return "measure"
         else:
             return "other"
@@ -543,6 +543,8 @@ def dash_self_service():
     response = requests.post(url, headers=headers, json=data)
     sql_query_unclean = response.json()['choices'][0]['message']['content']
     sql_query = extract_sql_query(sql_query_unclean)
+    # Add limit to the query to prevent data from being too large TEMPORARY SOLUTION
+    sql_query = sql_query.rstrip(';') + ' LIMIT 6900;'
 
     # Execute the SQL query and get the data output
     def execute_and_visualize(sql_query, selected_visual, selected_measures):

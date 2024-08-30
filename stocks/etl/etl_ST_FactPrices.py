@@ -41,27 +41,38 @@ if existing_tickers:
     existing_data = yf.download(" ".join(existing_tickers), period="1mo")
     data.update(existing_data)
 
-# Now 'data' contains the combined data for all tickers
+# Function to download and format data
+def download_and_format_data(tickers, period="max"):
+    if tickers:
+        # Download data
+        data = yf.download(" ".join(tickers), period=period)
+        
+        # Ensure data is a DataFrame even if there's only one ticker
+        if not isinstance(data.columns, pd.MultiIndex):
+            # Convert single ticker data to MultiIndex format
+            data.columns = pd.MultiIndex.from_product([data.columns, [tickers[0]]])
+        
+        # Melt the DataFrame to get it into the date, ticker, close_price format
+        df = data['Close'].stack().reset_index()
+        df.columns = ['Date', 'Ticker', 'Close_Price']
+        df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
+        return df.sort_values(['Ticker', 'Date']).reset_index(drop=True)
+    return pd.DataFrame()  # Return an empty DataFrame if no tickers
 
-# Filter so only closing prices are included
-df = pd.DataFrame(data)
-df = df['Close']
-# Reset the index to make 'Date' a column
-df.reset_index(inplace=True)
-df.loc[:, 'Date'] = df['Date'].dt.strftime('%Y-%m-%d')
+# Download data for new tickers
+new_data_df = download_and_format_data(new_tickers)
 
-# Melt the DataFrame to get it into the date, ticker, close_price format
-df_melted = df.melt(id_vars=['Date'], var_name='Ticker', value_name='Close_Price')
-# Sort the DataFrame by Ticker and Date
-df_melted = df_melted.sort_values(['Ticker', 'Date'])
+# Download only 1 month of data for existing tickers
+existing_data_df = download_and_format_data(existing_tickers, period="1mo")
+
+# Combine both dataframes
+df_combined = pd.concat([new_data_df, existing_data_df], ignore_index=True)
+
+# Ensure all column names are lowercase
+df_combined.columns = df_combined.columns.str.lower()
+
 # Remove rows where Close_Price is NaN
-df_melted = df_melted.dropna(subset=['Close_Price'])
-# Reset the index
-df_melted = df_melted.reset_index(drop=True)
-# Lowercase all column names
-df_melted.columns = df_melted.columns.str.lower()
-# Reconvert date to yyyy-mm-dd format
-df_melted['date'] = pd.to_datetime(df_melted['date']).dt.strftime('%Y-%m-%d')
+df_combined = df_combined.dropna(subset=['close_price'])
 
 # Data quality checks
 def quality_checks(df):
@@ -81,7 +92,7 @@ def quality_checks(df):
     return issues
 
 # Perform quality checks
-issues = quality_checks(df_melted)
+issues = quality_checks(df_combined)
 
 # Output issues if exists
 if issues:
@@ -101,7 +112,7 @@ else:
     """
 
     # Convert DataFrame to list of tuples
-    values = list(df_melted[['ticker', 'date', 'close_price']].itertuples(index=False, name=None))
+    values = list(df_combined[['ticker', 'date', 'close_price']].itertuples(index=False, name=None))
 
     # Execute the query
     cursor.executemany(upsert_query, values)
