@@ -242,7 +242,7 @@ def db_chatbot():
         data = {
             "model": "openrouter/auto",  # You can change this to another model if needed
             "messages": [
-                {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to executed. Doing it step by step."},
+                {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to executed."},
                 {"role": "user", "content": prompt}
             ]
         }
@@ -534,7 +534,7 @@ def dash_self_service():
     data = {
         "model": "openrouter/auto",
         "messages": [
-            {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to be executed. Doing it step by step."},
+            {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to be executed."},
             {"role": "user", "content": prompt}
         ]
     }
