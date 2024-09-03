@@ -34,8 +34,7 @@
   <nav class="sidebar">
     <ul>
       <li><a href="/" class="mainmenu-button">Main page</a></li>
-      <li><a href="/datachatbot">Data chatbot</a></li>
-      <li><a href="/dash_self_service">Data self-service dashboard</a></li>
+      <li><a href="/dash_self_service">Data 'Google'</a></li>
       <li><a href="/dash_stocks">Stocks data dashboard</a></li>
       <li><a href="/dash_southpark">South Park data dashboard</a></li>
       <li><a href="{{ url_for('static', filename='presentation.pdf') }}">Auto-generated presentation</a></li>
@@ -123,7 +122,7 @@
       <section id="app">
         <h2>How app was created</h2>
         <h3>This script is the Flask backend used to apply all logic for all aspects of the app. Each app route @ represents each button or url of the app</h3>
-        <h4>For the chatbot, I run a query to extract the information schema of each table in the database automatically (with comments of each column for added context) and include it in the prompt for the large language model to understand the data and output an accurate SQL query. This query is then executed, the results are cleaned & converted to html, and the output is rendered in the chatbot user interface with options to export to CSV, Excel, PDF etc. I use OpenRouter auto selector so the best LLM is chosen every time. For safety purposes, I make sure to only execute queries that do not modify the database in any way.</h4>
+        <h4>For the data 'Google', I run a query to extract the information schema of each table in the database automatically (with comments of each column for added context) and include it in the prompt for the large language model to understand the data and output an accurate SQL query. This query is then executed, the results are cleaned/converted, and the output is rendered to the user interface. The 'Table' option has the ability to export to CSV, Excel, PDF etc. While the other visual options generate a Chart.js, the data is pre-processed in the backend as well. I use OpenRouter auto selector so the best LLM is chosen every time. For safety purposes, I make sure to only execute queries that do not modify the database in any way.</h4>
         <h4>For this documentation, all text boxes with code on this site are automatically rendered with senstive data such as passwords and API keys being hidden or 'sanitized'. The database schema diagram is automatically created with the create_data_structure_diagram function using graphviz library.</h4>
         <h4>For the data dashboards, note how a SQL query is executed that dynamically changes depending on user input. This results in only the data the user needs to see to be loaded to the site, hence reducing the need for additional front-end javascript logic.</h4>
         <pre><code class="language-python">{{ web_app }}</code></pre>

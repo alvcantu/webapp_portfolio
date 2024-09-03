@@ -17,6 +17,17 @@
   <meta name="theme-color" content="#ffffff">
   <!-- References CSS styling -->
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <!-- jQuery -->
+  <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- DataTables JS -->
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+  <!-- DataTables Buttons JS -->
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/dataTables.buttons.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.html5.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.print.min.js"></script>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.1/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -28,7 +39,6 @@
   <nav class="sidebar">
     <ul>
       <li><a href="/" class="mainmenu-button">Main page</a></li>
-      <li><a href="/datachatbot">Data chatbot</a></li>
       <li><a href="/dash_southpark">South Park data dashboard</a></li>
       <li><a href="/dash_stocks">Stocks data dashboard</a></li>
       <li><a href="{{ url_for('static', filename='presentation.pdf') }}">Auto-generated presentation</a></li>
@@ -44,8 +54,28 @@
   <script src="{{ url_for('static', filename='scripts.js') }}"></script>
   
   <!-- Titles -->
-  <h1>Data Self-Service Dashboard (WIP)</h1>
-  <h3>Write a query and select chart type to generate a visual</h3>
+  <h1>Data 'Google'</h1>
+
+  <!-- Pop-up button -->
+  <a class="documentation-button" onclick="openPopup()">See data that can be queried</a>
+  <!-- References datastructure diagram -->
+  <div id="popup" class="popup">
+      <img src="{{ url_for('static', filename='data_structure_diagram.png') }}" alt="Data Structure Diagram" class="responsive-image">
+      <button onclick="closePopup()">Close</button>
+  </div>
+  <div id="overlay" class="overlay"></div>
+  <!-- Javascript for pop-up -->
+  <script>
+    function openPopup() {
+        document.getElementById("popup").style.display = "block";
+        document.getElementById("overlay").style.display = "block";
+    }
+
+    function closePopup() {
+        document.getElementById("popup").style.display = "none";
+        document.getElementById("overlay").style.display = "none";
+    }
+  </script>
 
   <!-- Filter form -->
   <form id="filterForm" method="POST">
@@ -53,30 +83,51 @@
     <!-- Form for user to write query -->
     <input type="text" id="user-input" name="user_query" placeholder="Ask anything about the data..." required>
   
-    <!-- Visualization Type Selection -->
-    <label for="selected_visual" style="margin-top: 1vh;">Visualization Type:</label>
-    <select name="selected_visual" id="selected_visual">
-      <option value="Line" {% if selected_visual == 'Line' %}selected{% endif %}>Line</option>
-      <option value="Bar" {% if selected_visual == 'Bar' %}selected{% endif %}>Bar</option>
-    </select>
-  
-    <!-- Update Visual Button -->
-    <button type="submit" id="update-visual-button" style="margin-top: 1vh;">Generate Visual</button>
+    <div class="form-group">
+      <!-- Visualization Type Selection -->
+      <select name="selected_visual" id="selected_visual">
+        <option value="Table" {% if selected_visual == 'Table' %}selected{% endif %}>Table</option>
+        <option value="Line" {% if selected_visual == 'Line' %}selected{% endif %}>Line</option>
+        <option value="Bar" {% if selected_visual == 'Bar' %}selected{% endif %}>Bar</option>
+      </select>
+
+      <!-- Update Visual Button -->
+      <button type="submit" id="update-visual-button">Generate Visual</button>
+    </div>
   </form>
 
     <!-- SQL query output -->
     <div class="sql-query-output">
-      <h5>SQL query used for visual (Limited to 6900 rows)</h5>
-      <pre><code>{{ sql_query }}</code></pre>
+      <h3>Generated SQL Query</h3>
+      <pre><code class="language-sql">{{ sql_query }}</code></pre>
     </div>
-  
+    <h5>Data limited to 6900 entries, be more specific if your query returns more than that.</h5>
+  <!--DataTable-->
+  {% if selected_visual == 'Table' %}
+    <div class="table-container">{{ data_output | safe }}</div>
+    <script>
+    // JS for DataTables
+    $(document).ready(function() {
+      if (document.getElementById('myTable')) {
+        $('#myTable').DataTable({
+          dom: 'Bfrtip',
+          pageLength: 20,  // Display 20 rows per page
+          buttons: [
+            'copy', 'csv', 'excel', 'pdf', 'print'
+          ],
+        });
+      }
+    });
+    </script>
+  {% else %}
   <!--Chart.js-->
     <canvas id="self-service-chart"></canvas>
     <script>
       var ctx = document.getElementById('self-service-chart').getContext('2d');
+      var chartData = {{ data_output | tojson }};
       var chart = new Chart(ctx, {
           type: '{{ selected_visual.lower() }}', // Dynamic chart type
-          data: {{ data_output | tojson }},
+          data: chartData,
           options: {
               plugins: {
                   title: {
@@ -103,7 +154,7 @@
                   x: {
                       title: {
                           display: true,
-                          text: '{{ dimensions }}',
+                          text: chartData.xAxisLabels[0] || 'X-Axis', // Use the first label or default to 'X-Axis'
                           color: 'white'
                       },
                       ticks: {
@@ -113,7 +164,7 @@
                   y: {
                       title: {
                           display: true,
-                          text: '{{ measures }}',
+                          text: chartData.yAxisLabels[0] || 'Y-Axis', // Use the first y-axis label or default to 'Y-Axis'
                           color: 'white'
                       },
                       ticks: {
@@ -124,6 +175,6 @@
           }
       });
     </script>
-
+  {% endif %}
 </body>
 </html>

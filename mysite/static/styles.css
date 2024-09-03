@@ -265,19 +265,7 @@ select option {
     margin: auto;
 }
 
-/* Styling for chatbot and pop up with data model */
-.header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 60px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #2d3436;
-    z-index: 999;
-}
+/* Styling for pop up with data model */
 .popup {
     display: none;
     position: fixed;
@@ -300,37 +288,6 @@ select option {
     background-color: rgba(0,0,0,0.5);
     z-index: 9998;
 }
-.chat-container {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 60px);
-    width: 100%;
-    margin: 60px auto 0;
-    padding: 15px;
-    box-sizing: border-box;
-}
-.chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    margin-bottom: 10px;
-    padding: 10px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-}
-.message {
-    margin-bottom: 15px;
-    padding: 10px;
-    border-radius: 5px;
-    word-wrap: break-word;
-    width: 100%;
-    box-sizing: border-box;
-}
-.user-message {
-    background-color: #3498db;
-}
-.bot-message {
-    background-color: #2ecc71;
-}
 /* Added CSS for pre and code elements */
 .bot-message pre, .bot-message code {
     white-space: pre-wrap; /* Ensures the text wraps */
@@ -343,35 +300,23 @@ select option {
     align-items: center; /* Ensures the items are vertically centered */
 }
 
-#user-input, #send-button {
-    box-sizing: border-box; /* Ensures padding and border are included in the element's total width and height */
-    height: 40px; /* Ensures both elements have the same height */
+#user-input { /* used for visual generation */
+  width: 50vw /* Set the width to 70% of the viewport width */;
+  padding: 10px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px; /* Rounded corners on all sides */
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  box-sizing: border-box; /* Ensures padding doesn't affect overall width */
 }
 
-#user-input {
-    flex: 1;
-    padding: 10px;
-    font-size: 16px;
-    border: none;
-    border-radius: 5px 0 0 5px;
-    background-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-}
-
-#send-button {
-    padding: 0 20px;
-    font-size: 16px;
-    border: none;
-    border-radius: 0 5px 5px 0;
-    background-color: #3498db;
-    color: #ffffff;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-}
-
-#send-button:hover {
-    background-color: #2980b9;
+.form-group {
+  display: flex;
+  flex-direction: horizontal;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1vh;
 }
 
 #update-visual-button {
