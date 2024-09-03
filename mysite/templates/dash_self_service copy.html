@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alvaro's Self Service Data Dashboard</title>
+  <!-- Favicon and touch icons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
+  <link rel="mask-icon" href="{{ url_for('static', filename='safari-pinned-tab.svg') }}" color="#638e1f">
+  <!-- Meta tags -->
+  <meta name="apple-mobile-web-app-title" content="Alvaro's App">
+  <meta name="application-name" content="Alvaro's App">
+  <meta name="msapplication-TileColor" content="#b79841">
+  <meta name="theme-color" content="#ffffff">
+  <!-- References CSS styling -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.1/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.2.1/chartjs-plugin-zoom.min.js"></script> 
+  <!-- jQuery -->
+  <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- DataTables JS -->
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+  <!-- DataTables Buttons JS -->
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/dataTables.buttons.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.html5.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.print.min.js"></script>
+</head>
+<body>
+
+  <button class="menu-toggle">☰</button>
+  <nav class="sidebar">
+    <ul>
+      <li><a href="/" class="mainmenu-button">Main page</a></li>
+      <li><a href="/datachatbot">Data chatbot</a></li>
+      <li><a href="/dash_southpark">South Park data dashboard</a></li>
+      <li><a href="/dash_stocks">Stocks data dashboard</a></li>
+      <li><a href="{{ url_for('static', filename='presentation.pdf') }}">Auto-generated presentation</a></li>
+      <li><a href="/documentation#database-online_retail" class="documentation-button">How data model was created</a></li>
+      <li><a href="/documentation#app" class="documentation-button">How this app was created</a></li>
+      <li><a href="https://github.com/alvcantu/coursera_portfolio" class="weblink-button">Data analysis repository</a></li>
+      <li><a href="{{ url_for('static', filename='AlvaroCantuCV.pdf') }}" class="weblink-button">My CV/Resume</a></li>
+      <li><a href="https://www.linkedin.com/in/alvcantu/" class="weblink-button">My LinkedIn</a></li>
+    </ul>
+  </nav>
+
+  <!-- References Javascript logic for sidebar button and menu -->
+  <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+  
+  <!-- Titles -->
+  <h1>Data Self-Service Dashboard (WIP)</h1>
+  <h3>Select datamart, dimensions, measures, and aggregation function to generate a visual</h3>
+
+  <!-- Filter form -->
+  <form id="filterForm" method="POST">
+    <label for="selected_datamart">Datamart:</label>
+    <select name="selected_datamart" id="selected_datamart" onchange="document.getElementById('filterForm').submit();">
+      {% for code, name in data_mart_list %}
+      <option value="{{ code }}" {% if selected_datamart == code %}selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+  
+    <label for="selected_dimensions" style="margin-top: 1vh;">Dimensions:</label>
+    <div class="custom-multi-select">
+      {% for dimension in dimension_columns %}
+        <input type="checkbox" id="dimension_{{ dimension }}" name="selected_dimensions" value="{{ dimension }}"
+              {% if dimension in selected_dimensions %}checked{% endif %}>
+        <label for="dimension_{{ dimension }}">{{ dimension }}</label>
+      {% endfor %}
+    </div>
+  
+    <label for="selected_measures" style="margin-top: 1vh;">Measures:</label>
+    <div class="custom-multi-select">
+      {% for measure in measure_columns %}
+        <input type="checkbox" id="measure_{{ measure }}" name="selected_measures" value="{{ measure }}"
+              {% if measure in selected_measures %}checked{% endif %}>
+        <label for="measure_{{ measure }}">{{ measure }}</label>
+      {% endfor %}
+    </div>
+  
+    <!-- Aggregation Function Selection -->
+    <label for="selected_aggregation" style="margin-top: 1vh;">Aggregation Function:</label>
+    <select name="selected_aggregation" id="selected_aggregation">
+      <option value="Average" {% if selected_aggregation == 'Average' %}selected{% endif %}>Average</option>
+      <option value="Sum" {% if selected_aggregation == 'Sum' %}selected{% endif %}>Sum</option>
+      <option value="Median" {% if selected_aggregation == 'Median' %}selected{% endif %}>Median</option>
+      <option value="Max" {% if selected_aggregation == 'Max' %}selected{% endif %}>Max</option>
+      <option value="Min" {% if selected_aggregation == 'Min' %}selected{% endif %}>Min</option>
+      <option value="Count" {% if selected_aggregation == 'Count' %}selected{% endif %}>Count</option>
+    </select>
+  
+    <!-- Visualization Type Selection -->
+    <label for="selected_visual" style="margin-top: 1vh;">Visualization Type:</label>
+    <select name="selected_visual" id="selected_visual">
+      <option value="Table" {% if selected_visual == 'Table' %}selected{% endif %}>Table</option>
+      <option value="Line" {% if selected_visual == 'Line' %}selected{% endif %}>Line</option>
+      <option value="Area" {% if selected_visual == 'Area' %}selected{% endif %}>Area</option>
+      <option value="Bar" {% if selected_visual == 'Bar' %}selected{% endif %}>Bar</option>
+    </select>
+  
+    <!-- Update Visual Button -->
+    <button type="submit" id="update-visual-button" style="margin-top: 1vh;">Update Visual</button>
+  </form>
+  
+  <!--DataTable-->
+  {% if selected_visual == 'Table' %}
+    <div class="table-container">{{ data_output | safe }}</div>
+    <script>
+    // JS for DataTables
+    $(document).ready(function() {
+      if (document.getElementById('myTable')) {
+        $('#myTable').DataTable({
+          dom: 'Bfrtip',
+          buttons: [
+            'copy', 'csv', 'excel', 'pdf', 'print'
+          ],
+          pageLength: 20,  // Display 20 rows per page
+          lengthMenu: [[10, 20, 50, -1], [10, 20, 50]],  // Allow user to change page length
+          deferRender: true,  // Defer rendering of table rows until they are to be displayed
+        });
+      }
+    });
+    </script>
+  {% else %}
+  <!--Chart.js-->
+    <canvas id="self-service-chart"></canvas>
+    <script>
+      var ctx = document.getElementById('self-service-chart').getContext('2d');
+      var chart = new Chart(ctx, {
+          type: '{{ selected_visual.lower() }}', // Dynamic chart type
+          data: {{ data_output | tojson }},
+          options: {
+              layout: {
+                  padding: {
+                      top: 10,    // Add top padding
+                      bottom: 10  // Add bottom padding
+                  }
+              },
+              scales: {
+                  x: {
+                      title: {
+                          display: true,
+                          text: '{{ selected_dimensions }}',
+                          color: 'white'
+                      },
+                      ticks: {
+                          color: 'white'
+                      }
+                  },
+                  y: {
+                      title: {
+                          display: true,
+                          text: '{{ selected_measures }}',
+                          color: 'white'
+                      },
+                      ticks: {
+                          color: 'white'
+                      }
+                  }
+              },
+              plugins: {
+                  legend: {
+                      labels: {
+                          color: 'white'
+                      }
+                  }
+              }
+          }
+      });
+    </script>
+  {% endif %}
+
+</body>
+</html>

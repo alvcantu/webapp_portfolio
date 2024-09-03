@@ -1,5 +1,4 @@
 from flask import Flask, request, render_template, url_for, jsonify
-from youtube_transcript_api import YouTubeTranscriptApi
 import re
 import csv
 import requests
@@ -12,6 +11,7 @@ import os
 from graphviz import Digraph
 import sqlparse
 from datetime import datetime
+from decimal import Decimal
 
 
 # Initializes Flask app, backend framework that connects to front-end and computes all logic
@@ -31,26 +31,116 @@ def get_db_connection():
     cursor = mydb.cursor()
     return mydb, cursor
 
-# Extracts all data marts
-def get_db_data_marts():
-    # Connect to MySQL database
-    mydb, cursor = get_db_connection()
+# Prepare data for Chart.js
+def prepare_data_for_chart(data_output):
+    if not data_output:
+        return {"labels": [], "datasets": []}
 
-    # Get list of all tables
-    cursor.execute("SHOW TABLES")
-    tables = cursor.fetchall()
-
-    # Extract codes from table names
-    codes = set()
-    for table in tables:
-        # Assuming each table name is a tuple with one element
-        table_name = table[0]
-        # Split the table name at the underscore and take the first part
-        if '_' in table_name:
-            code = table_name.split('_')[0]
-            codes.add(code)
+    # Determine the number of columns in the data
+    num_columns = len(data_output[0])
     
-    return list(codes)
+    # Case 1: Single Dimension with One Measure
+    if num_columns == 2:
+        labels = [str(row[0]) for row in data_output]  # Use the first column as labels
+        data = [float(row[1]) if isinstance(row[1], Decimal) else row[1] for row in data_output]  # Convert Decimal to float and use as data
+
+        return {
+            "labels": labels,
+            "datasets": [{
+                "label": "Dataset 1",  # You can customize this label
+                "data": data,
+                "backgroundColor": 'rgba(54, 162, 235, 0.2)',
+                "borderColor": 'rgba(54, 162, 235, 1)',
+                "borderWidth": 1
+            }]
+        }
+
+    # Case 2: Single Dimension with Multiple Measures
+    elif num_columns > 2 and len(data_output[0]) == num_columns:
+        labels = [str(row[0]) for row in data_output]  # Use the first column as labels
+        datasets = []
+        num_measures = num_columns - 1  # Number of measures
+
+        for i in range(1, num_measures + 1):
+            data = [float(row[i]) if isinstance(row[i], Decimal) else row[i] for row in data_output]
+            datasets.append({
+                "label": f"Measure {i}",  # Customize the label per dataset
+                "data": data,
+                "backgroundColor": f'rgba({54 + i*20}, {162 - i*20}, {235 - i*10}, 0.2)',
+                "borderColor": f'rgba({54 + i*20}, {162 - i*20}, {235 - i*10}, 1)',
+                "borderWidth": 1
+            })
+
+        return {
+            "labels": labels,
+            "datasets": datasets
+        }
+
+    # Case 3: Multiple Dimensions with One Measure
+    elif len(data_output[0]) > 2 and num_columns == len(data_output[0]):
+        dimensions = [f"{row[0]} - {row[1]}" for row in data_output]  # Combine multiple dimensions for labels
+        data = [float(row[2]) if isinstance(row[2], Decimal) else row[2] for row in data_output]
+
+        return {
+            "labels": dimensions,
+            "datasets": [{
+                "label": "Measure 1",  # Customize this label
+                "data": data,
+                "backgroundColor": 'rgba(54, 162, 235, 0.2)',
+                "borderColor": 'rgba(54, 162, 235, 1)',
+                "borderWidth": 1
+            }]
+        }
+
+    # Case 4: Multiple Dimensions with Multiple Measures
+    elif len(data_output[0]) > 2 and num_columns > len(data_output[0]):
+        # Extract dimensions and measures
+        num_dimensions = len(data_output[0]) - (num_columns - 1)  # Number of dimensions
+        dimensions = [f"{row[0]} - {row[1]}" for row in data_output]  # Combine dimensions for labels
+        datasets = []
+        num_measures = num_columns - num_dimensions  # Number of measures
+
+        for i in range(num_dimensions, num_columns):
+            data = [float(row[i]) if isinstance(row[i], Decimal) else row[i] for row in data_output]
+            datasets.append({
+                "label": f"Measure {i - num_dimensions + 1}",  # Customize the label per dataset
+                "data": data,
+                "backgroundColor": f'rgba({54 + i*20}, {162 - i*20}, {235 - i*10}, 0.2)',
+                "borderColor": f'rgba({54 + i*20}, {162 - i*20}, {235 - i*10}, 1)',
+                "borderWidth": 1
+            })
+
+        return {
+            "labels": dimensions,
+            "datasets": datasets
+        }
+
+    # Case 5: If data structure is unclear or more complex
+    else:
+        # Handle more complex cases or log an error
+        return {"labels": [], "datasets": []}
+
+
+# # Extracts all data marts
+# def get_db_data_marts():
+#     # Connect to MySQL database
+#     mydb, cursor = get_db_connection()
+
+#     # Get list of all tables
+#     cursor.execute("SHOW TABLES")
+#     tables = cursor.fetchall()
+
+#     # Extract codes from table names
+#     codes = set()
+#     for table in tables:
+#         # Assuming each table name is a tuple with one element
+#         table_name = table[0]
+#         # Split the table name at the underscore and take the first part
+#         if '_' in table_name:
+#             code = table_name.split('_')[0]
+#             codes.add(code)
+    
+#     return list(codes)
 
 # Extracts information schema of each table in mySQL database
 def get_db_description(data_mart=None):
@@ -445,169 +535,257 @@ def dash_stocks():
 
 @app.route('/dash_self_service', methods=['GET', 'POST'])
 def dash_self_service():
+    user_query = ''
+    sql_query = ''
+    dimensions = ''
+    measures = ''
+    data_output = ''
+    selected_visual = 'Bar' # Default visualization type
 
-    # Connect to MySQL database
-    mydb, cursor = get_db_connection()  
+    if request.method == 'POST':
+        user_query = request.form.get('user_query', '')
+        selected_visual = request.form.get('selected_visual', 'Bar')
 
-    # Datamart selector query
-    data_mart_list = get_db_data_marts()
+        # Function to generate SQL query using OpenRouter API
+        prompt = f"""
+        Given the following database schema with column comments for context:
+        {db_description}
 
-    # Map the datamarts to readable names
-    mapped_data_marts = [(code, datamart_mapping.get(code, code)) for code in data_mart_list]
+        Generate a query for this request:
+        {user_query}
+        """
 
-    # Set default selections if not provided
-    default_datamart = data_mart_list[0] if data_mart_list else ''
-    selected_datamart = request.form.get('selected_datamart', default_datamart)  
-
-    # Aggregation function selection
-    selected_aggregation = request.form.get('selected_aggregation', 'Average')
-
-    # Define exceptions for column classifications
-    classification_exceptions = {
-        'SP': {
-            'season': 'dimension'
-        },
-        # Add more data marts and their exceptions here
-    }
-
-    # Function to classify columns based on their data types with exceptions inccluded
-    def get_column_classification(data_mart, column_name, data_type):
-        # Check if there's an exception for this column in the given data mart
-        if data_mart in classification_exceptions and column_name in classification_exceptions[data_mart]:
-            return classification_exceptions[data_mart][column_name]
-        
-        # Default classification logic
-        if any(data_type.startswith(t) for t in ('varchar', 'char', 'text', 'date')):
-            return "dimension"
-        elif any(data_type.startswith(t) for t in ('int', 'float','decimal')):
-            return "measure"
-        else:
-            return "other"
-
-    # Your existing code to gather db description
-    db_description_data_mart = get_db_description(selected_datamart) 
-    columns_with_types = {
-        column_name: data_type.decode() if isinstance(data_type, bytes) else str(data_type)
-        for table in db_description_data_mart.values() for column_name, data_type, *_ in table
-    }
-
-    # Classify columns with exceptions
-    classified_columns = {
-        column_name: {
-            'name': column_name,
-            'type': data_type,
-            'classification': get_column_classification(selected_datamart, column_name, data_type)
+        url = "https://openrouter.ai/api/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         }
-        for column_name, data_type in columns_with_types.items()
-    }
-    # Extract dimension and measure columns
-    dimension_columns = [column for column, details in classified_columns.items() if details['classification'] == 'dimension']
-    measure_columns = [column for column, details in classified_columns.items() if details['classification'] == 'measure']
+        data = {
+            "model": "openrouter/auto",  # You can change this to another model if needed
+            "messages": [
+                {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to executed. Only included the needed columns in the query."},
+                {"role": "user", "content": prompt}
+            ]
+        }
 
-    # Set default dimensions and measures
-    default_dimension = dimension_columns[:1]  # Selecting the first dimension as default
-    default_measure = measure_columns[:1]  # Selecting the first measure as default
+        response = requests.post(url, headers=headers, json=data)
+        sql_query_unclean = response.json()['choices'][0]['message']['content']
 
-    # Get selected dimensions and measures from the form
-    selected_dimensions = request.form.getlist('selected_dimensions') or default_dimension
-    selected_measures = request.form.getlist('selected_measures') or default_measure
+        # Extract only the query from the sql query response
+        sql_query = extract_sql_query(sql_query_unclean)
+        # Add limit to the query to prevent data from being too large
+        sql_query = sql_query.rstrip(';') + ' LIMIT 6900;'
 
-    # Default visualization type
-    selected_visual = request.form.get('selected_visual', 'Table')
-
-    # Prompt for OpenRouter API to generate SQL query
-    prompt = f"""
-    Given the following database schema with column comments for context:
-    {db_description_data_mart}
-
-    Generate a query that calculates the {selected_aggregation} of these measures:
-    {selected_measures}
-    And groups them by these dimensions:
-    {selected_dimensions}
-    """
-
-    # Send the prompt to OpenRouter API
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-    }
-    data = {
-        "model": "openrouter/auto",
-        "messages": [
-            {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to be executed."},
-            {"role": "user", "content": prompt}
-        ]
-    }
-
-    # Parsing the response from OpenRouter API and cleaning up the SQL query
-    response = requests.post(url, headers=headers, json=data)
-    sql_query_unclean = response.json()['choices'][0]['message']['content']
-    sql_query = extract_sql_query(sql_query_unclean)
-    # Add limit to the query to prevent data from being too large TEMPORARY SOLUTION
-    sql_query = sql_query.rstrip(';') + ' LIMIT 6900;'
-
-    # Execute the SQL query and get the data output
-    def execute_and_visualize(sql_query, selected_visual, selected_measures):
-        is_read_only, error_message = is_read_only_query(sql_query)
-        if not is_read_only:
-            return f"Error: Query is not read-only. {error_message}"
-        
-        try:
-            mydb, cursor = get_db_connection()
+        # Function to extract dimensions and measures from the query
+        def extract_dimensions_and_measures(sql_query):
+            # Extracting columns from SELECT clause
+            select_pattern = r'SELECT\s+(.*?)\s+FROM'
+            select_match = re.search(select_pattern, sql_query, re.IGNORECASE | re.DOTALL)
             
-            cursor.execute(sql_query)
-            data_output = cursor.fetchall()
-            
-            if selected_visual == 'Table':
-                data_output_html = get_table_html(sql_query)
+            if select_match:
+                select_clause = select_match.group(1)
+                # Split the select clause by commas to get individual columns or expressions
+                measures = [col.strip() for col in select_clause.split(',')]
             else:
-                # Prepare chart data
-                if data_output:
-                    chart_data = {
-                        'labels': [row[0] for row in data_output if row],
-                        'datasets': [
-                            {
-                                'label': measure,
-                                'data': [row[i] for row in data_output if len(row) > i],
-                                'backgroundColor': 'rgba(255, 99, 132, 0.2)',
-                                'borderColor': 'rgba(255, 99, 132, 1)',
-                                'borderWidth': 1,
-                                'fill': True if selected_visual == 'Area' else False
-                            } for i, measure in enumerate(selected_measures, start=1)
-                        ]
-                    }
-                else:
-                    chart_data = {'labels': [], 'datasets': []}
-                data_output_html = chart_data
+                measures = []
 
-            return data_output_html
+            # Extracting columns from GROUP BY clause
+            group_by_pattern = r'GROUP BY\s+(.*?)(?:\s+ORDER BY|\s+LIMIT|$)'
+            group_by_match = re.search(group_by_pattern, sql_query, re.IGNORECASE | re.DOTALL)
+            
+            if group_by_match:
+                group_by_clause = group_by_match.group(1)
+                # Split the group by clause by commas to get individual columns
+                dimensions = [col.strip() for col in group_by_clause.split(',')]
+            else:
+                dimensions = []
 
-        except Error as e:
-            # If there's a MySQL error, return the query for debugging
-            return f"MySQL Error:\nQuery: {escape(sql_query)}\nError: {str(e)}"
+            return dimensions, measures
         
-        except Exception as e:
-            # Catch any other unexpected errors
-            return f"Unexpected Error:\nQuery: {escape(sql_query)}\nError: {str(e)}"
+        dimensions, measures = extract_dimensions_and_measures(sql_query)
+
+        # Connect to MySQL database
+        mydb, cursor = get_db_connection()
+
+        # Execute the SQL query and get the data output
+        cursor.execute(sql_query)
+        raw_data_output = cursor.fetchall()
+
+        # Prepare the data for Chart.js using the dynamic function
+        data_output = prepare_data_for_chart(raw_data_output)
         
-        finally:
-            if 'cursor' in locals() and cursor:
-                cursor.close()
-            if 'mydb' in locals() and mydb.is_connected():
-                mydb.close()
-
-    data_output_html = execute_and_visualize(sql_query, selected_visual, selected_measures)
-
-
+    
     return render_template('dash_self_service.html',
-                           data_mart_list=mapped_data_marts,
-                           dimension_columns=dimension_columns,
-                           measure_columns=measure_columns,
-                           selected_datamart=selected_datamart,
-                           selected_dimensions=selected_dimensions,
-                           selected_measures=selected_measures,
+                           dimensions=dimensions,
+                           measures=measures,
                            selected_visual=selected_visual,
-                           data_output=data_output_html)
+                           sql_query=sql_query,
+                           data_output=data_output)
+
+# OLD CODE (use with copy)
+# def dash_self_service():
+
+#     # Connect to MySQL database
+#     mydb, cursor = get_db_connection()  
+
+#     # Datamart selector query
+#     data_mart_list = get_db_data_marts()
+
+#     # Map the datamarts to readable names
+#     mapped_data_marts = [(code, datamart_mapping.get(code, code)) for code in data_mart_list]
+
+#     # Set default selections if not provided
+#     default_datamart = data_mart_list[0] if data_mart_list else ''
+#     selected_datamart = request.form.get('selected_datamart', default_datamart)  
+
+#     # Aggregation function selection
+#     selected_aggregation = request.form.get('selected_aggregation', 'Average')
+
+#     # Define exceptions for column classifications
+#     classification_exceptions = {
+#         'SP': {
+#             'season': 'dimension'
+#         },
+#         # Add more data marts and their exceptions here
+#     }
+
+#     # Function to classify columns based on their data types with exceptions inccluded
+#     def get_column_classification(data_mart, column_name, data_type):
+#         # Check if there's an exception for this column in the given data mart
+#         if data_mart in classification_exceptions and column_name in classification_exceptions[data_mart]:
+#             return classification_exceptions[data_mart][column_name]
+        
+#         # Default classification logic
+#         if any(data_type.startswith(t) for t in ('varchar', 'char', 'text', 'date')):
+#             return "dimension"
+#         elif any(data_type.startswith(t) for t in ('int', 'float','decimal')):
+#             return "measure"
+#         else:
+#             return "other"
+
+#     # Your existing code to gather db description
+#     db_description_data_mart = get_db_description(selected_datamart) 
+#     columns_with_types = {
+#         column_name: data_type.decode() if isinstance(data_type, bytes) else str(data_type)
+#         for table in db_description_data_mart.values() for column_name, data_type, *_ in table
+#     }
+
+#     # Classify columns with exceptions
+#     classified_columns = {
+#         column_name: {
+#             'name': column_name,
+#             'type': data_type,
+#             'classification': get_column_classification(selected_datamart, column_name, data_type)
+#         }
+#         for column_name, data_type in columns_with_types.items()
+#     }
+#     # Extract dimension and measure columns
+#     dimension_columns = [column for column, details in classified_columns.items() if details['classification'] == 'dimension']
+#     measure_columns = [column for column, details in classified_columns.items() if details['classification'] == 'measure']
+
+#     # Set default dimensions and measures
+#     default_dimension = dimension_columns[:1]  # Selecting the first dimension as default
+#     default_measure = measure_columns[:1]  # Selecting the first measure as default
+
+#     # Get selected dimensions and measures from the form
+#     selected_dimensions = request.form.getlist('selected_dimensions') or default_dimension
+#     selected_measures = request.form.getlist('selected_measures') or default_measure
+
+#     # Default visualization type
+#     selected_visual = request.form.get('selected_visual', 'Table')
+
+#     # Prompt for OpenRouter API to generate SQL query
+#     prompt = f"""
+#     Given the following database schema with column comments for context:
+#     {db_description_data_mart}
+
+#     Generate a query that calculates the {selected_aggregation} of these measures:
+#     {selected_measures}
+#     And groups them by these dimensions:
+#     {selected_dimensions}
+#     """
+
+#     # Send the prompt to OpenRouter API
+#     url = "https://openrouter.ai/api/v1/chat/completions"
+#     headers = {
+#         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+#     }
+#     data = {
+#         "model": "openrouter/auto",
+#         "messages": [
+#             {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to be executed."},
+#             {"role": "user", "content": prompt}
+#         ]
+#     }
+
+#     # Parsing the response from OpenRouter API and cleaning up the SQL query
+#     response = requests.post(url, headers=headers, json=data)
+#     sql_query_unclean = response.json()['choices'][0]['message']['content']
+#     sql_query = extract_sql_query(sql_query_unclean)
+#     # Add limit to the query to prevent data from being too large TEMPORARY SOLUTION
+#     sql_query = sql_query.rstrip(';') + ' LIMIT 6900;'
+
+#     # Execute the SQL query and get the data output
+#     def execute_and_visualize(sql_query, selected_visual, selected_measures):
+#         is_read_only, error_message = is_read_only_query(sql_query)
+#         if not is_read_only:
+#             return f"Error: Query is not read-only. {error_message}"
+        
+#         try:
+#             mydb, cursor = get_db_connection()
+            
+#             cursor.execute(sql_query)
+#             data_output = cursor.fetchall()
+            
+#             if selected_visual == 'Table':
+#                 data_output_html = get_table_html(sql_query)
+#             else:
+#                 # Prepare chart data
+#                 if data_output:
+#                     chart_data = {
+#                         'labels': [row[0] for row in data_output if row],
+#                         'datasets': [
+#                             {
+#                                 'label': measure,
+#                                 'data': [row[i] for row in data_output if len(row) > i],
+#                                 'backgroundColor': 'rgba(255, 99, 132, 0.2)',
+#                                 'borderColor': 'rgba(255, 99, 132, 1)',
+#                                 'borderWidth': 1,
+#                                 'fill': True if selected_visual == 'Area' else False
+#                             } for i, measure in enumerate(selected_measures, start=1)
+#                         ]
+#                     }
+#                 else:
+#                     chart_data = {'labels': [], 'datasets': []}
+#                 data_output_html = chart_data
+
+#             return data_output_html
+
+#         except Error as e:
+#             # If there's a MySQL error, return the query for debugging
+#             return f"MySQL Error:\nQuery: {escape(sql_query)}\nError: {str(e)}"
+        
+#         except Exception as e:
+#             # Catch any other unexpected errors
+#             return f"Unexpected Error:\nQuery: {escape(sql_query)}\nError: {str(e)}"
+        
+#         finally:
+#             if 'cursor' in locals() and cursor:
+#                 cursor.close()
+#             if 'mydb' in locals() and mydb.is_connected():
+#                 mydb.close()
+
+#     data_output_html = execute_and_visualize(sql_query, selected_visual, selected_measures)
+
+
+#     return render_template('dash_self_service.html',
+#                            data_mart_list=mapped_data_marts,
+#                            dimension_columns=dimension_columns,
+#                            measure_columns=measure_columns,
+#                            selected_datamart=selected_datamart,
+#                            selected_dimensions=selected_dimensions,
+#                            selected_measures=selected_measures,
+#                            selected_visual=selected_visual,
+#                            data_output=data_output_html)
 
 @app.route('/documentation')
 def documentation():
@@ -631,7 +809,8 @@ def documentation():
         'pdf_gen_stocks':'/home/alvcantu/stocks/etl/pdf_gen_stocks.py',
         'dash_stocks': '/home/alvcantu/mysite/templates/dash_stocks.html',
         # Online retail files
-        'etl_online_retail': '/home/alvcantu/online_retail/etl_online_retail.py'
+        'etl_online_retail': '/home/alvcantu/online_retail/etl_online_retail.py',
+        'create_mlmodel_online_retail': '/home/alvcantu/online_retail/create_mlmodel_online_retail.py'
     }
 
     replacements = [

@@ -111,9 +111,12 @@
         </section>
         <section id="database-online_retail">
           <h2>Online retailer data mart</h2>
+          <h3>The goal of this project is to build a machine learning model that predicts sales based on various features of the data.</h3>
           <h4>Data for this project comes from UC Irvine Machine Learning Respository: https://archive.ics.uci.edu/dataset/352/online+retail</h4>
           <h4>I first normalize the data into two tables and insert them into mySQL database.</h4>
           <pre><code class="language-python">{{ etl_online_retail }}</code></pre>
+          <h4>I then create a machine learning model using XGBooster to predict sales. I use Bayesian Optimization with skopt to find the best hyperparameters for the model.</h4>
+          <pre><code class="language-python">{{ create_mlmodel_online_retail }}</code></pre>
         </section>
       </section>
 

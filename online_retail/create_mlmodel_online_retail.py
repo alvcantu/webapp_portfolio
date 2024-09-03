@@ -6,6 +6,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 import xgboost as xgb
 from datetime import datetime
+from skopt import BayesSearchCV
+from sklearn.model_selection import TimeSeriesSplit
 
 # Connect to MySQL database
 def get_db_connection():
@@ -15,7 +17,7 @@ def get_db_connection():
         password="h63Efp09-d",
         database="alvcantu$default"
     )
-    cursor = mydb.cursor(dictionary=True)  # This is the key change
+    cursor = mydb.cursor(dictionary=True) # Outputs as dictionary
     return mydb, cursor
 
 def execute_query(query):
@@ -72,7 +74,38 @@ df['Country'] = le.fit_transform(df['Country'])
 X = df[['CustomerID', 'StockCode', 'Year', 'Month', 'Day', 'DayOfWeek', 'UnitPrice', 'Quantity', 'Country']]
 y = df['Sales']
 
-# Split data based on InvoiceDate
+# Implement TimeSeriesSplit
+tscv = TimeSeriesSplit(n_splits=3)  # You can adjust the number of splits
+
+# Bayesian Optimization with skopt
+param_space = {
+    'max_depth': (6, 12),
+    'eta': (0.01, 0.2, 'log-uniform'),
+    'min_child_weight': (1, 10),
+    'subsample': (0.6, 1.0),
+    'colsample_bytree': (0.6, 1.0)
+}
+
+model = xgb.XGBRegressor(objective='reg:squarederror')
+
+bayes_search = BayesSearchCV(
+    estimator=model, 
+    search_spaces=param_space, 
+    scoring='neg_mean_squared_error', 
+    n_iter=50, 
+    cv=tscv,  # Use TimeSeriesSplit for cross-validation
+    verbose=1, 
+    n_jobs=1  # Set to 1 to avoid memory issues with parallel jobs
+)
+
+# Fit the model with Bayesian Optimization
+bayes_search.fit(X, y)
+
+# Retrieve the best parameters
+best_params = bayes_search.best_params_
+print(f"Best parameters found: {best_params}")
+
+# Split data into training and test set based on InvoiceDate
 train_date_threshold = datetime(2011, 6, 9)  # Midpoint for split
 train_data = df[df['InvoiceDate'] < train_date_threshold]
 test_data = df[df['InvoiceDate'] >= train_date_threshold]
@@ -82,27 +115,9 @@ y_train = train_data['Sales']
 X_test = test_data[['CustomerID', 'StockCode', 'Year', 'Month', 'Day', 'DayOfWeek', 'UnitPrice', 'Quantity', 'Country']]
 y_test = test_data['Sales']
 
-# Prepare data for XGBoost
-dtrain = xgb.DMatrix(X_train, label=y_train)
-dtest = xgb.DMatrix(X_test, label=y_test)
-
-# Set up parameters for XGBoost
-params = {
-    'max_depth': 8,
-    'eta': 0.05,
-    'objective': 'reg:squarederror',
-    'eval_metric': 'rmse',
-    'min_child_weight': 1,
-    'subsample': 0.8,
-    'colsample_bytree': 0.8
-}
-
-# Train the model
-num_rounds = 300
-model = xgb.train(params, dtrain, num_rounds)
-
-# Make predictions
-predictions = model.predict(dtest)
+# Use the best model to predict on the test set
+best_model = bayes_search.best_estimator_
+predictions = best_model.predict(X_test)
 
 # Evaluate the model
 mse = mean_squared_error(y_test, predictions)
@@ -113,7 +128,7 @@ print(f"Root Mean Squared Error: {rmse}")
 print(f"R-squared Score: {r2}")
 
 # Feature importance
-print(model.get_score(importance_type='gain'))
+print(best_model.get_booster().get_score(importance_type='gain'))
 
-# If you want to save the model for later use:
-model.save_model('online_retail/xgboost_salesmodel_online_retail.json')
+# Save the best model
+best_model.save_model('online_retail/xgboost_salesmodel_online_retail.json')
