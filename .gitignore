@@ -20,3 +20,10 @@
 __pycache__
 .profile
 .supermaven
+# ignore these in static folder for site
+mysite/static/presentation_graphs
+mysite/static/AlvaroCantuCV.pdf
+mysite/static/data_structure_diagram.png
+mysite/static/presentation.pdf
+# ignores all stock report pdf's
+mysite/static/stock_report* 
