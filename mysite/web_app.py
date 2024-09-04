@@ -44,80 +44,137 @@ def is_read_only_query(sql_query):
 
 # Prepare data for Chart.js
 def prepare_data_for_chart(data_output):
-    if not data_output:
-        return {"labels": [], "datasets": [], "xAxisLabels": [], "yAxisLabels": []}
+    # Connect to MySQL database
+    mydb, cursor = get_db_connection()
 
-    # Assuming the first row contains column names or labels
-    headers = [str(header) for header in data_output[0]]
-    data_output = data_output[1:]  # Remove headers from data
+    # Execute the query
+    cursor.execute(sql_query)
+    data_output = cursor.fetchall()
+
+    # Get headers from cursor description
+    headers = [desc[0] for desc in cursor.description]
+
+    # Close database connection
+    cursor.close()
+    mydb.close()
 
     # Determine the number of columns in the data
     num_columns = len(headers)
-    
-    # Extract axis labels from headers
-    xAxisLabels = headers[0] if num_columns > 0 else "X-Axis"
-    yAxisLabels = headers[1] if num_columns > 1 else "Y-Axis"
 
-    # Case 1: Single Dimension with One Measure
-    if num_columns == 2:
-        labels = [str(row[0]) for row in data_output]
-        data = [float(row[1]) if isinstance(row[1], Decimal) else row[1] for row in data_output]
+    # Helper function to determine if a value is a number
+    def is_numeric(value):
+        return isinstance(value, (int, float, Decimal))
+
+    # Helper function to determine if a value is a date
+    def is_date(value):
+        try:
+            if isinstance(value, datetime):
+                return True
+            datetime.strptime(str(value), '%Y-%m-%d')
+            return True
+        except (ValueError, TypeError):
+            return False
+
+    # Helper function to format date values
+    def format_date(value):
+        if isinstance(value, datetime):
+            return value.strftime('%Y-%m-%d')
+        return str(value)
+
+    # Split headers into dimensions and measures
+    dimensions = []
+    measures = []
+
+    for idx, header in enumerate(headers):
+        # Check if the first data row's value is numeric or a date
+        if is_numeric(data_output[0][idx]):
+            measures.append(header)
+        else:
+            dimensions.append(header)
+
+    # Handling different cases based on the number of dimensions and measures
+    if len(dimensions) == 1 and len(measures) == 1:
+        # Case 1: Single Dimension with One Measure
+        labels = [format_date(row[0]) if is_date(row[0]) else str(row[0]) for row in data_output]
+        data = [float(row[1]) for row in data_output]
 
         return {
             "labels": labels,
             "datasets": [{
-                "label": yAxisLabels,
+                "label": measures[0],
                 "data": data,
                 "backgroundColor": 'rgba(54, 162, 235, 0.2)',
                 "borderColor": 'rgba(54, 162, 235, 1)',
                 "borderWidth": 1
             }],
-            "xAxisLabels": [xAxisLabels],
-            "yAxisLabels": [yAxisLabels]
+            "xAxisLabels": dimensions,
+            "yAxisLabels": measures
         }
 
-    # Case 2: Single Dimension with Multiple Measures
-    elif num_columns > 2:
-        labels = [str(row[0]) for row in data_output]
-        datasets = []
-        for i in range(1, num_columns):
-            data = [float(row[i]) if isinstance(row[i], Decimal) else row[i] for row in data_output]
-            datasets.append({
-                "label": headers[i],
+    elif len(dimensions) > 1 and len(measures) == 1:
+        # Case 2: Multiple Dimensions with One Measure
+        labels = [format_date(row[0]) if is_date(row[0]) else str(row[0]) for row in data_output]
+        data = [float(row[1]) for row in data_output]
+
+        return {
+            "labels": labels,
+            "datasets": [{
+                "label": measures[0],
                 "data": data,
-                "backgroundColor": f'rgba({54 + i*20}, {162 - i*20}, {235 - i*10}, 0.2)',
-                "borderColor": f'rgba({54 + i*20}, {162 - i*20}, {235 - i*10}, 1)',
+                "backgroundColor": 'rgba(255, 206, 86, 0.2)',
+                "borderColor": 'rgba(255, 206, 86, 1)',
+                "borderWidth": 1
+            }],
+            "xAxisLabels": dimensions,
+            "yAxisLabels": measures
+        }
+
+    elif len(dimensions) == 1 and len(measures) > 1:
+        # Case 3: Single Dimension with Multiple Measures
+        labels = [format_date(row[0]) if is_date(row[0]) else str(row[0]) for row in data_output]
+        datasets = []
+
+        for i, measure in enumerate(measures):
+            data = [float(row[i + 1]) for row in data_output]
+            datasets.append({
+                "label": measure,
+                "data": data,
+                "backgroundColor": f'rgba({54 + i * 30}, {162 - i * 30}, 235, 0.2)',
+                "borderColor": f'rgba({54 + i * 30}, {162 - i * 30}, 235, 1)',
                 "borderWidth": 1
             })
 
         return {
             "labels": labels,
             "datasets": datasets,
-            "xAxisLabels": [xAxisLabels],
-            "yAxisLabels": headers[1:]  # All measures labels for Y-axis
+            "xAxisLabels": dimensions,
+            "yAxisLabels": measures
         }
 
-    # Case 3 & 4: For simplicity, treating them similarly since handling would be complex without clear distinction
-    else:
-        # Here we'll assume the first two columns could be dimensions for labels
-        dimensions = [f"{row[0]} - {row[1]}" if len(row) > 1 else str(row[0]) for row in data_output]
-        data = [float(row[2]) if isinstance(row[2], Decimal) else row[2] for row in data_output if len(row) > 2]
+    elif len(dimensions) > 1 and len(measures) > 1:
+        # Case 4: Multiple Dimensions with Multiple Measures
+        labels = [format_date(row[0]) if is_date(row[0]) else str(row[0]) for row in data_output]
+        datasets = []
+
+        for i, measure in enumerate(measures):
+            data = [float(row[i + len(dimensions)]) for row in data_output]
+            datasets.append({
+                "label": measure,
+                "data": data,
+                "backgroundColor": f'rgba({75 + i * 30}, {192 - i * 30}, 192, 0.2)',
+                "borderColor": f'rgba({75 + i * 30}, {192 - i * 30}, 192, 1)',
+                "borderWidth": 1
+            })
 
         return {
-            "labels": dimensions,
-            "datasets": [{
-                "label": yAxisLabels,
-                "data": data,
-                "backgroundColor": 'rgba(54, 162, 235, 0.2)',
-                "borderColor": 'rgba(54, 162, 235, 1)',
-                "borderWidth": 1
-            }],
-            "xAxisLabels": [xAxisLabels, headers[1] if len(headers) > 1 else "Dimension 2"],
-            "yAxisLabels": [yAxisLabels]
+            "labels": labels,
+            "datasets": datasets,
+            "xAxisLabels": dimensions,
+            "yAxisLabels": measures
         }
 
-    # Case 5: If data structure is unclear or more complex
-    return {"labels": [], "datasets": [], "xAxisLabels": [], "yAxisLabels": []}
+    else:
+        return {"labels": [], "datasets": [], "xAxisLabels": [], "yAxisLabels": []}
 
 # Function to load the datamart mapping into a dictionary
 # Path to the CSV file
@@ -478,26 +535,12 @@ def dash_self_service():
         # Add limit to the query to prevent data from being too large
         sql_query = sql_query.rstrip(';') + ' LIMIT 6900;'
 
-        # Connect to MySQL database
-        mydb, cursor = get_db_connection()
-
-        # Execute the SQL query and get the data output
-        cursor.execute(sql_query)
-        raw_data_output = cursor.fetchall()
-
         if selected_visual == 'Table':
             # Prepare data for DataTable, get_table_html function already checks if the query is read-only
             data_output = get_table_html(sql_query)
 
         else:
-            # Check if the query is read-only
-            is_read_only, error_message = is_read_only_query(sql_query)
-            if not is_read_only:
-                return error_message
-            else:
-                # Prepare the data for Chart.js using the dynamic function
-                data_output = prepare_data_for_chart(raw_data_output)
-        
+            data_output = TEST_prepare_data_for_chart(sql_query)
     
     return render_template('dash_self_service.html',
                            selected_visual=selected_visual,
@@ -557,6 +600,12 @@ def documentation():
 @app.route('/')
 def index():
     return render_template('index.html')
+
+# TESTING GOES BELOW
+@app.route('/test', methods=['GET', 'POST'])
+def test():
+
+    render_template('test.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

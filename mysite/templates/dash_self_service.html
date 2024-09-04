@@ -96,85 +96,89 @@
     </div>
   </form>
 
-    <!-- SQL query output -->
-    <div class="sql-query-output">
-      <h3>Generated SQL Query</h3>
-      <pre><code class="language-sql">{{ sql_query }}</code></pre>
-    </div>
-    <h5>Data limited to 6900 entries, be more specific if your query returns more than that.</h5>
-  <!--DataTable-->
-  {% if selected_visual == 'Table' %}
-    <div class="table-container">{{ data_output | safe }}</div>
-    <script>
-    // JS for DataTables
-    $(document).ready(function() {
-      if (document.getElementById('myTable')) {
-        $('#myTable').DataTable({
-          dom: 'Bfrtip',
-          pageLength: 20,  // Display 20 rows per page
-          buttons: [
-            'copy', 'csv', 'excel', 'pdf', 'print'
-          ],
+<!-- These elements will only be displayed if user_query is defined and not empty, i.e the form has been submitted -->
+  {% if user_query is defined and user_query != '' %} 
+        <!-- SQL query output -->
+        <div class="sql-query-output">
+        <h3>Generated SQL Query</h3>
+        <h5>Data limited to 6900 entries, be more specific if your query returns more than that.</h5>
+        <pre><code class="language-sql">{{ sql_query }}</code></pre>
+        </div>
+    <!--DataTable-->
+    {% if selected_visual == 'Table' %}
+        <h3>{{ user_query }}</h3>
+        <div class="table-container">{{ data_output | safe }}</div>
+        <script>
+        // JS for DataTables
+        $(document).ready(function() {
+        if (document.getElementById('myTable')) {
+            $('#myTable').DataTable({
+            dom: 'Bfrtip',
+            pageLength: 20,  // Display 20 rows per page
+            buttons: [
+                'copy', 'csv', 'excel', 'pdf', 'print'
+            ],
+            });
+        }
         });
-      }
-    });
-    </script>
-  {% else %}
-  <!--Chart.js-->
-    <canvas id="self-service-chart"></canvas>
-    <script>
-      var ctx = document.getElementById('self-service-chart').getContext('2d');
-      var chartData = {{ data_output | tojson }};
-      var chart = new Chart(ctx, {
-          type: '{{ selected_visual.lower() }}', // Dynamic chart type
-          data: chartData,
-          options: {
-              plugins: {
-                  title: {
-                      display: true,
-                      text: '{{ user_query }}',
-                      color: 'white',
-                      font: {
-                          size: 16 // You can adjust the font size
-                      }
-                  },
-                  legend: {
-                      labels: {
-                          color: 'white'
-                      }
-                  }
-              },
-              layout: {
-                  padding: {
-                      top: 10,    // Add top padding
-                      bottom: 10  // Add bottom padding
-                  }
-              },
-              scales: {
-                  x: {
-                      title: {
-                          display: true,
-                          text: chartData.xAxisLabels[0] || 'X-Axis', // Use the first label or default to 'X-Axis'
-                          color: 'white'
-                      },
-                      ticks: {
-                          color: 'white'
-                      }
-                  },
-                  y: {
-                      title: {
-                          display: true,
-                          text: chartData.yAxisLabels[0] || 'Y-Axis', // Use the first y-axis label or default to 'Y-Axis'
-                          color: 'white'
-                      },
-                      ticks: {
-                          color: 'white'
-                      }
-                  }
-              }
-          }
-      });
-    </script>
+        </script>
+    {% else %}
+    <!--Chart.js-->
+        <canvas id="self-service-chart"></canvas>
+        <script>
+        var ctx = document.getElementById('self-service-chart').getContext('2d');
+        var chartData = {{ data_output | tojson }};
+        var chart = new Chart(ctx, {
+            type: '{{ selected_visual.lower() }}', // Dynamic chart type
+            data: chartData,
+            options: {
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '{{ user_query }}',
+                        color: 'white',
+                        font: {
+                            size: 16 // You can adjust the font size
+                        }
+                    },
+                    legend: {
+                        labels: {
+                            color: 'white'
+                        }
+                    }
+                },
+                layout: {
+                    padding: {
+                        top: 10,    // Add top padding
+                        bottom: 10  // Add bottom padding
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: chartData.xAxisLabels[0] || 'X-Axis', // Use the first label or default to 'X-Axis'
+                            color: 'white'
+                        },
+                        ticks: {
+                            color: 'white'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: chartData.yAxisLabels[0] || 'Y-Axis', // Use the first y-axis label or default to 'Y-Axis'
+                            color: 'white'
+                        },
+                        ticks: {
+                            color: 'white'
+                        }
+                    }
+                }
+            }
+        });
+        </script>
+    {% endif %}
   {% endif %}
 </body>
 </html>

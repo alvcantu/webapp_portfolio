@@ -340,6 +340,7 @@ select option {
 .table-container {
     overflow-x: auto;
     margin-top: 15px;
+    margin-bottom: 15px;
 }
 #myTable {
     width: 100%;
