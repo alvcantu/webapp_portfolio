@@ -6,7 +6,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 import xgboost as xgb
 from datetime import datetime
-from skopt import BayesSearchCV
+from sklearn.model_selection import RandomizedSearchCV
+import scipy.stats as stats
 from sklearn.model_selection import TimeSeriesSplit
 
 # Connect to MySQL database
@@ -77,32 +78,37 @@ y = df['Sales']
 # Implement TimeSeriesSplit
 tscv = TimeSeriesSplit(n_splits=3)  # You can adjust the number of splits
 
-# Bayesian Optimization with skopt
-param_space = {
-    'max_depth': (6, 12),
-    'eta': (0.01, 0.2, 'log-uniform'),
-    'min_child_weight': (1, 10),
-    'subsample': (0.6, 1.0),
-    'colsample_bytree': (0.6, 1.0)
+# Define the parameter distributions for Randomized Search
+param_dist = {
+    'max_depth': stats.randint(3, 12),
+    'eta': stats.uniform(0.01, 0.3),
+    'min_child_weight': stats.randint(1, 10),
+    'subsample': stats.uniform(0.5, 0.5),
+    'colsample_bytree': stats.uniform(0.5, 0.5),
+    'gamma': stats.uniform(0, 0.5),
+    'lambda': stats.uniform(1, 2),
+    'alpha': stats.uniform(0, 1)
 }
 
-model = xgb.XGBRegressor(objective='reg:squarederror')
+# Setup the RandomizedSearchCV
+model = xgb.XGBRegressor(objective='reg:squarederror', n_jobs=-1)  # Use all processors
 
-bayes_search = BayesSearchCV(
+random_search = RandomizedSearchCV(
     estimator=model, 
-    search_spaces=param_space, 
+    param_distributions=param_dist, 
+    n_iter=30,  # You can adjust this number based on how much time you have
     scoring='neg_mean_squared_error', 
-    n_iter=50, 
-    cv=tscv,  # Use TimeSeriesSplit for cross-validation
+    cv=tscv,  # Still using TimeSeriesSplit for time series data
     verbose=1, 
-    n_jobs=1  # Set to 1 to avoid memory issues with parallel jobs
+    n_jobs=1,  # Keep this at 1 if memory issues occur, otherwise -1 for all cores
+    random_state=42
 )
 
-# Fit the model with Bayesian Optimization
-bayes_search.fit(X, y)
+# Fit the random search model
+random_search.fit(X, y)
 
-# Retrieve the best parameters
-best_params = bayes_search.best_params_
+# Print best parameters
+best_params = random_search.best_params_
 print(f"Best parameters found: {best_params}")
 
 # Split data into training and test set based on InvoiceDate
@@ -116,7 +122,7 @@ X_test = test_data[['CustomerID', 'StockCode', 'Year', 'Month', 'Day', 'DayOfWee
 y_test = test_data['Sales']
 
 # Use the best model to predict on the test set
-best_model = bayes_search.best_estimator_
+best_model = random_search.best_estimator_
 predictions = best_model.predict(X_test)
 
 # Evaluate the model
