@@ -522,7 +522,7 @@ def dash_self_service():
         data = {
             "model": "openrouter/auto",  # You can change this to another model if needed
             "messages": [
-                {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to executed. Only included the needed columns in the query."},
+                {"role": "system", "content": "You are a MySQL server version 8.0.35 query generator that outputs code ready to executed. Only included the needed columns in the query."},
                 {"role": "user", "content": prompt}
             ]
         }

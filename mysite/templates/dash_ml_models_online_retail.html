@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alvaro's Self Service Data Dashboard</title>
+  <!-- Favicon and touch icons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
+  <link rel="mask-icon" href="{{ url_for('static', filename='safari-pinned-tab.svg') }}" color="#638e1f">
+  <!-- Meta tags -->
+  <meta name="apple-mobile-web-app-title" content="Alvaro's App">
+  <meta name="application-name" content="Alvaro's App">
+  <meta name="msapplication-TileColor" content="#b79841">
+  <meta name="theme-color" content="#ffffff">
+  <!-- References CSS styling -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <!-- jQuery -->
+  <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- DataTables JS -->
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+  <!-- DataTables Buttons JS -->
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/dataTables.buttons.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.html5.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.print.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.1/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.2.1/chartjs-plugin-zoom.min.js"></script> 
+</head>
+<body>
+
+  <button class="menu-toggle">☰</button>
+  <nav class="sidebar">
+    <ul>
+      <li><a href="/" class="mainmenu-button">Main page</a></li>
+      <li><a href="/dash_self_service">Data 'Google'</a></li>
+      <li><a href="/dash_southpark">South Park data dashboard</a></li>
+      <li><a href="/dash_stocks">Stocks data dashboard</a></li>
+      <li><a href="{{ url_for('static', filename='presentation.pdf') }}">Auto-generated presentation</a></li>
+      <li><a href="/documentation#database-online_retail" class="documentation-button">How data model was created</a></li>
+      <li><a href="/documentation#app" class="documentation-button">How this app was created</a></li>
+      <li><a href="https://github.com/alvcantu/coursera_portfolio" class="weblink-button">Data analysis repository</a></li>
+      <li><a href="{{ url_for('static', filename='AlvaroCantuCV.pdf') }}" class="weblink-button">My CV/Resume</a></li>
+      <li><a href="https://www.linkedin.com/in/alvcantu/" class="weblink-button">My LinkedIn</a></li>
+    </ul>
+  </nav>
+
+  <!-- References Javascript logic for sidebar button and menu -->
+  <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+  
+  <!-- Titles -->
+  <h1>ML Predictions Dashboard (WIP)</h1>
+  <h2>All models are meant to predict sales for an online retail business using historical transaction data.</h2>
+</body>
+</html>
