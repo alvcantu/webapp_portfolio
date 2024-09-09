@@ -533,7 +533,8 @@ def dash_self_service():
         # Extract only the query from the sql query response
         sql_query = extract_sql_query(sql_query_unclean)
         # Add limit to the query to prevent data from being too large
-        sql_query = sql_query.rstrip(';') + ' LIMIT 6900;'
+        if 'LIMIT' not in sql_query.upper():
+            sql_query = sql_query.rstrip(';') + ' LIMIT 6900;'
 
         if selected_visual == 'Table':
             # Prepare data for DataTable, get_table_html function already checks if the query is read-only

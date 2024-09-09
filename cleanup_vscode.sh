@@ -21,16 +21,16 @@ find "$VSCODE_DIR/extensions" -mindepth 1 -maxdepth 1 -type d -mtime +30 -exec r
 log_action "Deleted extensions not used in the last 30 days"
 
 # Clean up logs (adjust path if logs are stored elsewhere)
-find "$VSCODE_DIR/logs" -type f -mtime +7 -exec rm {} \;
-log_action "Deleted logs older than 7 days"
+find "$VSCODE_DIR/logs" -type f -mtime +1 -exec rm {} \;
+log_action "Deleted logs older than 1 days"
 
 # Remove temporary files
 find "$VSCODE_DIR" -type f -name "*.tmp" -delete
 log_action "Deleted temporary files"
 
 # Remove cache files (adjust according to VS Code's actual cache directory)
-find "$VSCODE_DIR/data" -type f -mtime +30 -delete
-log_action "Deleted cache files older than 30 days"
+find "$VSCODE_DIR/data" -type f -mtime +5 -delete
+log_action "Deleted cache files older than 5 days"
 
 # Remove backup files
 find "$VSCODE_DIR" -type f -name "*~" -delete
