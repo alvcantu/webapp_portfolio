@@ -51,11 +51,25 @@
     </ul>
   </nav>
 
-  <!-- References Javascript logic for sidebar button and menu -->
+  <!-- References shared app Javascript logic -->
   <script src="{{ url_for('static', filename='scripts.js') }}"></script>
   
   <!-- Titles -->
   <h1>ML Predictions Dashboard (WIP)</h1>
   <h2>All models are meant to predict sales for an online retail business using historical transaction data.</h2>
+  <!-- Accordion listing ML model descriptions-->
+  <!-- {% for column, data in mapping_ml_models_online_retail.items() %}
+  <button class="accordion"> {{ data['short_name'] }}</button>
+    <div>
+        <p>{{ data['description'] }}</p>
+    </div>
+  {% endfor %} -->
+
+  <button class="accordion">XG Boost with CV search</button>
+  <div class="panel">
+    <p>TEST</p>
+  </div>
+
+  <!--- Javascript for accordions -->
 </body>
 </html>

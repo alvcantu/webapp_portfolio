@@ -176,7 +176,7 @@ def prepare_data_for_chart(data_output):
     else:
         return {"labels": [], "datasets": [], "xAxisLabels": [], "yAxisLabels": []}
 
-# Function to load the datamart mapping into a dictionary
+# Function to load the mappings into dictionaries
 # Path to the CSV file
 datamart_mapping_path = '/home/alvcantu/mysite/static/datamart_mapping.csv'
 def load_datamart_mapping():
@@ -307,10 +307,91 @@ def create_data_structure_diagram(db_description, output_folder):
     output_path = os.path.join(output_folder, 'data_structure_diagram')
     dot.render(output_path, format='png', cleanup=True, engine='dot')
 
-# Load the datamart mapping when the app starts
+# Load the all mapping when the app starts
 datamart_mapping = load_datamart_mapping()
 # Converts db_description into diagram thats used in documentation
 create_data_structure_diagram(db_description, '/home/alvcantu/mysite/static')
+
+@app.route('/dash_self_service', methods=['GET', 'POST'])
+def dash_self_service():
+    user_query = ''
+    sql_query = ''
+    data_output = ''
+    selected_visual = 'Table' # Default visualization type
+
+    if request.method == 'POST':
+        user_query = request.form.get('user_query', '')
+        selected_visual = request.form.get('selected_visual', 'Table')
+
+        # Function to generate SQL query using OpenRouter API
+        prompt = f"""
+        Given the following database schema with column comments for context:
+        {db_description}
+
+        Generate a query for this request:
+        {user_query}
+        """
+
+        url = "https://openrouter.ai/api/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        }
+        data = {
+            "model": "openrouter/auto",  # You can change this to another model if needed
+            "messages": [
+                {"role": "system", "content": "You are a MySQL server version 8.0.35 query generator that outputs code ready to executed. Do not join tables without relationhips present in the schema."},
+                {"role": "user", "content": prompt}
+            ]
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+        sql_query_unclean = response.json()['choices'][0]['message']['content']
+
+        # Extract only the query from the sql query response
+        sql_query = extract_sql_query(sql_query_unclean)
+        # Add limit to the query to prevent data from being too large
+        if 'LIMIT' not in sql_query.upper():
+            sql_query = sql_query.rstrip(';') + ' LIMIT 6900;'
+
+        if selected_visual == 'Table':
+            # Prepare data for DataTable, get_table_html function already checks if the query is read-only
+            data_output = get_table_html(sql_query)
+
+        else:
+            data_output = TEST_prepare_data_for_chart(sql_query)
+    
+    return render_template('dash_self_service.html',
+                           selected_visual=selected_visual,
+                           sql_query=sql_query,
+                           user_query=user_query,
+                           data_output=data_output)
+
+@app.route('/dash_ml_models_online_retail')
+def dash_ml_models_online_retail():
+    # Mapping of column names to short names and descriptions for ml models
+    def load_mapping_ml_models_online_retail(mapping_ml_models_online_retail_path):
+        try:
+            with open(mapping_ml_models_online_retail_path, mode='r', encoding='utf-8') as file:
+                reader = csv.DictReader(file)
+                # 'column_name', 'short_name', and 'description' are headers in the CSV
+                return {
+                    row['column_name']: {
+                        'short_name': row['short_name'],
+                        'description': row['description']
+                    } for row in reader if 'column_name' in row and 'short_name' in row and 'description' in row
+                }
+        except FileNotFoundError:
+            print(f"Error: The file at {mapping_ml_models_online_retail_path} was not found.")
+            return {}
+        except KeyError as e:
+            print(f"Error: Missing expected column in CSV: {e}")
+            return {}
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            return {}
+    mapping_ml_models_online_retail = load_mapping_ml_models_online_retail('/home/alvcantu/mysite/static/mapping_ml_models_online_retail.csv')
+    
+    return render_template('dash_ml_models_online_retail.html', mapping_ml_models_online_retail=mapping_ml_models_online_retail)
 
 @app.route('/dash_southpark')
 def dash_southpark():
@@ -495,60 +576,6 @@ def dash_stocks():
                            company_names=company_names,
                            company_data=company_data)    
 
-@app.route('/dash_self_service', methods=['GET', 'POST'])
-def dash_self_service():
-    user_query = ''
-    sql_query = ''
-    data_output = ''
-    selected_visual = 'Table' # Default visualization type
-
-    if request.method == 'POST':
-        user_query = request.form.get('user_query', '')
-        selected_visual = request.form.get('selected_visual', 'Table')
-
-        # Function to generate SQL query using OpenRouter API
-        prompt = f"""
-        Given the following database schema with column comments for context:
-        {db_description}
-
-        Generate a query for this request:
-        {user_query}
-        """
-
-        url = "https://openrouter.ai/api/v1/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        }
-        data = {
-            "model": "openrouter/auto",  # You can change this to another model if needed
-            "messages": [
-                {"role": "system", "content": "You are a MySQL server version 8.0.35 query generator that outputs code ready to executed. Only included the needed columns in the query."},
-                {"role": "user", "content": prompt}
-            ]
-        }
-
-        response = requests.post(url, headers=headers, json=data)
-        sql_query_unclean = response.json()['choices'][0]['message']['content']
-
-        # Extract only the query from the sql query response
-        sql_query = extract_sql_query(sql_query_unclean)
-        # Add limit to the query to prevent data from being too large
-        if 'LIMIT' not in sql_query.upper():
-            sql_query = sql_query.rstrip(';') + ' LIMIT 6900;'
-
-        if selected_visual == 'Table':
-            # Prepare data for DataTable, get_table_html function already checks if the query is read-only
-            data_output = get_table_html(sql_query)
-
-        else:
-            data_output = TEST_prepare_data_for_chart(sql_query)
-    
-    return render_template('dash_self_service.html',
-                           selected_visual=selected_visual,
-                           sql_query=sql_query,
-                           user_query=user_query,
-                           data_output=data_output)
-
 @app.route('/documentation')
 def documentation():
     paths = {
@@ -601,10 +628,6 @@ def documentation():
 @app.route('/')
 def index():
     return render_template('index.html')
-
-# TESTING GOES BELOW
-@app.route('/test', methods=['GET', 'POST'])
-def test():
 
     render_template('test.html')
 
