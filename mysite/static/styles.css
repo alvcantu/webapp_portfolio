@@ -65,6 +65,15 @@ pre[class*="language-"] {
     font-size: 10px; /* Adjust the font size as needed */
 }
 
+/* Custom styling for SQL code blocks */
+code[class*="language-sql"],
+pre[class*="language-sql"] {
+    font-size: 10px; /* Adjust the font size as needed */
+    white-space: pre-wrap; /* Ensures text wrapping */
+    word-wrap: break-word; /* For older browsers or additional support */
+    overflow-wrap: break-word; /* Modern way to say word-wrap */
+}
+
 form {
   box-sizing: border-box;
   padding: 15px;
@@ -338,6 +347,8 @@ select option {
 }
 
 .table-container {
+    width: 90%;
+    margin: 0 auto;
     overflow-x: auto;
     margin-top: 15px;
     margin-bottom: 15px;

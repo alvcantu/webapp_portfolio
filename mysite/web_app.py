@@ -366,7 +366,7 @@ def dash_self_service():
                            user_query=user_query,
                            data_output=data_output)
 
-@app.route('/dash_ml_models_online_retail')
+@app.route('/dash_ml_models_online_retail',methods=['GET', 'POST'])
 def dash_ml_models_online_retail():
     # Mapping of column names to short names and descriptions for ml models
     def load_mapping_ml_models_online_retail(mapping_ml_models_online_retail_path):
@@ -390,8 +390,72 @@ def dash_ml_models_online_retail():
             print(f"An unexpected error occurred: {e}")
             return {}
     mapping_ml_models_online_retail = load_mapping_ml_models_online_retail('/home/alvcantu/mysite/static/mapping_ml_models_online_retail.csv')
+
+    # Connect to MySQL database
+    mydb, cursor = get_db_connection()
+
+    # SQL query that returns all column names for all models
+    column_names_sql = '''
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'ONR_FactTransactions'
+        AND column_name LIKE 'Predicted_Sales%';
+        '''
+    # Fetch column names
+    cursor.execute(column_names_sql)
+    #column_names = [row['COLUMN_NAME'] for row in cursor.fetchall()]
+    column_names = [row[0] for row in cursor.fetchall()]
+
+    # Function to execute queries
+    def execute_and_fetch(sql, cursor):
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    # Function to generate SQL for each metric
+    def generate_sql(metric, column_names):
+        sql_parts = []
+        for col in column_names:
+            sql_parts.append(f'''
+                SELECT '{col}' AS prediction_type, '{metric}' AS metric ,{dynamic_sqls[metric].format(col=col)} AS value
+                FROM ONR_FactTransactions
+            ''')
+        # Ensure there's at least one part
+        if not sql_parts:
+            return ""
+        # Join with UNION ALL between all parts except the last one
+        return ' UNION ALL '.join(sql_parts) + ';'
+
+    # Define metrics
+    metrics = ['RMSE', 'MSE', 'MAE', 'MAPE']
+    dynamic_sqls = {
+        'RMSE': 'SQRT(AVG(POWER((Quantity * UnitPrice) - {col}, 2)))',
+        'MSE': 'SUM(POW((UnitPrice * Quantity) - {col}, 2)) / COUNT(*)',
+        'MAE': 'AVG(ABS((UnitPrice * Quantity) - {col}))',
+        'MAPE': '(SUM(ABS((Quantity * UnitPrice) - Predicted_Sales1) / NULLIF(Quantity * UnitPrice, 0)) / COUNT(*)) * 100'
+    }
+
+    # Execute queries and combine results
+    data_output = []
+    for metric in metrics:
+        sql = generate_sql(metric, column_names)
+        if sql:  # Only attempt to execute if SQL was generated
+            results = execute_and_fetch(sql, cursor)
+            data_output.extend(results)
+
+    # Filter data by selected metric
+    selected_performance_measure = request.args.get('performance_measure', metrics[0])
+    filtered_data = [item for item in data_output if item[1] == selected_performance_measure]
+
+    # Close connection
+    cursor.close()
+    mydb.close()
     
-    return render_template('dash_ml_models_online_retail.html', mapping_ml_models_online_retail=mapping_ml_models_online_retail)
+    return render_template('dash_ml_models_online_retail.html', 
+                            mapping_ml_models_online_retail=mapping_ml_models_online_retail,
+                            selected_performance_measure=selected_performance_measure,
+                            data_output=data_output,
+                            filtered_data=filtered_data,
+                            metrics=metrics)
 
 @app.route('/dash_southpark')
 def dash_southpark():

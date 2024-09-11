@@ -19,15 +19,6 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <!-- jQuery -->
   <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <!-- DataTables JS -->
-  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
-  <!-- DataTables Buttons JS -->
-  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/dataTables.buttons.min.js"></script>
-  <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-  <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-  <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.html5.min.js"></script>
-  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.print.min.js"></script>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.1/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -65,11 +56,64 @@
     </div>
   {% endfor %} -->
 
-  <button class="accordion">XG Boost with CV search</button>
-  <div class="panel">
-    <p>TEST</p>
+  <form id="filterForm" onchange="this.submit()">
+    <label for="performance_measure" >Perfomance Measure:</label>
+    <select name="performance_measure" id="performance_measure">
+      {% for metric in metrics %}
+      <option value="{{ metric }}" {% if selected_performance_measure == metric %}selected{% endif %}>{{ metric }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <!-- filtered_data --->
+  <div class="table-container">{{ data_output | safe }}</div>
+  <div class="table-container">{{ filtered_data| safe }}</div>
+
+  <!-- Chart.js
+  <div style="width:80%;">
+    <canvas id="performanceChart"></canvas>
   </div>
 
-  <!--- Javascript for accordions -->
+  <script>
+  var ctx = document.getElementById('performanceChart').getContext('2d');
+  var chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+          labels: {{ filtered_data | map(attribute='prediction_type') | list | tojson }},
+          datasets: [{
+              label: '{{ selected_performance_measure }}',
+              data: {{ filtered_data | map(attribute=selected_performance_measure) | list | tojson }},
+              backgroundColor: 'rgba(75, 192, 192, 0.2)',
+              borderColor: 'rgba(75, 192, 192, 1)',
+              borderWidth: 1
+          }]
+      },
+      options: {
+          scales: {
+              y: {
+                  beginAtZero: true,
+                  title: {
+                      display: true,
+                      text: 'Prediction Type'
+                  }
+              },
+              x: {
+                  title: {
+                      display: true,
+                      text: '{{ selected_performance_measure }}'
+                  }
+              }
+          },
+          plugins: {
+              legend: {
+                  display: false
+              }
+          },
+          responsive: true,
+          maintainAspectRatio: false
+      }
+  });
+  </script> -->
+
 </body>
 </html>

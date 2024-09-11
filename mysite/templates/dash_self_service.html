@@ -100,12 +100,10 @@
 <!-- These elements will only be displayed if user_query is defined and not empty, i.e the form has been submitted -->
   {% if user_query is defined and user_query != '' %} 
         <!-- SQL query output, actual query text is wrapped in a div to prevent overflow -->
-        <div class="sql-query-output">
+        <div class="sql-query-output", text-wrap="true">
         <h3>Generated SQL Query</h3>
         <h5>Data limited to 6900 entries, be more specific if your query returns more than that.</h5>
-        <div style="word-wrap: break-word; white-space: pre-wrap; overflow-wrap: break-word; width: 100%; max-width: 100%;">
-            <pre><code class="language-sql">{{ sql_query }}</code></pre>
-        </div>
+        <pre><code class="language-sql">{{ sql_query }}</code></pre>
         </div>
     <!--DataTable-->
     {% if selected_visual == 'Table' %}
