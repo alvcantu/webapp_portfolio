@@ -48,15 +48,9 @@
   <!-- Titles -->
   <h1>ML Predictions Dashboard (WIP)</h1>
   <h2>All models are meant to predict sales for an online retail business using historical transaction data.</h2>
-  <!-- Accordion listing ML model descriptions-->
-  <!-- {% for column, data in mapping_ml_models_online_retail.items() %}
-  <button class="accordion"> {{ data['short_name'] }}</button>
-    <div>
-        <p>{{ data['description'] }}</p>
-    </div>
-  {% endfor %} -->
 
-  <form id="filterForm" onchange="this.submit()">
+  <!-- Filter form -->
+  <form id="filterForm" onchange="this.submit()"></form>
     <label for="performance_measure" >Perfomance Measure:</label>
     <select name="performance_measure" id="performance_measure">
       {% for metric in metrics %}
@@ -68,51 +62,73 @@
   <!-- filtered_data --->
   <div class="table-container">{{ data_output | safe }}</div>
 
-  <!-- Chart.js
-  <div style="width:80%;">
+  <!-- Chart.js -->
+  <div style="width:80%; height: 400px;">
     <canvas id="performanceChart"></canvas>
   </div>
-
   <script>
-  var ctx = document.getElementById('performanceChart').getContext('2d');
-  var chart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-          labels: {{ data_output | map(attribute='prediction_type') | list | tojson }},
-          datasets: [{
-              label: '{{ selected_performance_measure }}',
-              data: {{ data_output | map(attribute=selected_performance_measure) | list | tojson }},
-              backgroundColor: 'rgba(75, 192, 192, 0.2)',
-              borderColor: 'rgba(75, 192, 192, 1)',
-              borderWidth: 1
-          }]
-      },
-      options: {
-          scales: {
-              y: {
-                  beginAtZero: true,
-                  title: {
-                      display: true,
-                      text: 'Prediction Type'
-                  }
-              },
-              x: {
-                  title: {
-                      display: true,
-                      text: '{{ selected_performance_measure }}'
-                  }
-              }
-          },
-          plugins: {
-              legend: {
-                  display: false
-              }
-          },
-          responsive: true,
-          maintainAspectRatio: false
-      }
-  });
-  </script> -->
+    var ctx = document.getElementById('performanceChart').getContext('2d');
+  
+    // Extracting the labels and data from the given data_output
+    var labels = {{ data_output | tojson }}.map(function(item) {
+        return item[0]; // Predicted Sales labels
+    });
+    var dataValues = {{ data_output | tojson }}.map(function(item) {
+        return item[2]; // Peformance metric values
+    });
+  
+    var chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels, // y-axis labels (Predicted_Sales1, Predicted_Sales2)
+            datasets: [{
+                label: '{{ selected_performance_measure }}',
+                data: dataValues, // Metric values on x-axis
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y', // This makes it a horizontal bar chart (flips x and y axis)
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: '{{ selected_performance_measure }}' // X-axis title
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Prediction Type' // Y-axis title
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+  </script>
+  
+  <h3>Select a model to view its description</h3>
+  <!-- Accordion listing ML model descriptions-->
+  <!-- {% for column, data in mapping_ml_models_online_retail.items() %}
+  <button class="accordion"> {{ data['short_name'] }}</button>
+    <div>
+        <p>{{ data['description'] }}</p>
+    </div>
+  {% endfor %} -->
+  <button class="accordion"> JADE</button>
+    <div>
+        <p>JADEEEE</p>
+    </div>
 
-</body>
-</html>
+  </body>
+  </html>

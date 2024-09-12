@@ -9,7 +9,6 @@ from datetime import datetime
 from bayes_opt import BayesianOptimization
 from sklearn.model_selection import TimeSeriesSplit
 
-# Assuming the database connection function remains unchanged
 # Connect to MySQL database
 def get_db_connection():
     mydb = mysql.connector.connect(

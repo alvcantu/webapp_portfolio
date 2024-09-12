@@ -369,28 +369,18 @@ def dash_self_service():
 @app.route('/dash_ml_models_online_retail',methods=['GET', 'POST'])
 def dash_ml_models_online_retail():
     # Mapping of column names to short names and descriptions for ml models
-    # def load_mapping_ml_models_online_retail(mapping_ml_models_online_retail_path):
-    #     try:
-    #         with open(mapping_ml_models_online_retail_path, mode='r', encoding='utf-8') as file:
-    #             reader = csv.DictReader(file)
-    #             # 'column_name', 'short_name', and 'description' are headers in the CSV
-    #             return {
-    #                 row['column_name']: {
-    #                     'short_name': row['short_name'],
-    #                     'description': row['description']
-    #                 } for row in reader if 'column_name' in row and 'short_name' in row and 'description' in row
-    #             }
-    #     except FileNotFoundError:
-    #         print(f"Error: The file at {mapping_ml_models_online_retail_path} was not found.")
-    #         return {}
-    #     except KeyError as e:
-    #         print(f"Error: Missing expected column in CSV: {e}")
-    #         return {}
-    #     except Exception as e:
-    #         print(f"An unexpected error occurred: {e}")
-    #         return {}
+    def load_mapping_ml_models_online_retail(mapping_ml_models_online_retail_path):
+        with open(mapping_ml_models_online_retail_path, mode='r', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            # 'column_name', 'short_name', and 'description' are headers in the CSV
+            return {
+                row['column_name']: {
+                    'short_name': row['short_name'],
+                    'description': row['description']
+                } for row in reader if 'column_name' in row and 'short_name' in row and 'description' in row
+            }
     
-    # mapping_ml_models_online_retail = load_mapping_ml_models_online_retail('/home/alvcantu/mysite/static/mapping_ml_models_online_retail.csv')
+    mapping_ml_models_online_retail = load_mapping_ml_models_online_retail('/home/alvcantu/mysite/static/mapping_ml_models_online_retail.csv')
 
     # Connect to MySQL database
     mydb, cursor = get_db_connection()
@@ -423,6 +413,7 @@ def dash_ml_models_online_retail():
 
     # Define metrics
     metrics = ['RMSE', 'MSE', 'MAE', 'MAPE']
+    selected_performance_measure = request.args.get('performance_measure', metrics[0])
     dynamic_sqls = {
         'RMSE': 'SQRT(AVG(POWER((Quantity * UnitPrice) - {col}, 2)))',
         'MSE': 'SUM(POW((UnitPrice * Quantity) - {col}, 2)) / COUNT(*)',
@@ -431,7 +422,6 @@ def dash_ml_models_online_retail():
     }
 
     # Execute queries
-    selected_performance_measure = request.args.get('performance_measure', metrics[0])
     sql = generate_sql(selected_performance_measure, column_names)
     cursor.execute(sql)
     data_output = cursor.fetchall()
@@ -442,6 +432,7 @@ def dash_ml_models_online_retail():
     
     return render_template('dash_ml_models_online_retail.html', 
                             selected_performance_measure=selected_performance_measure,
+                            mapping_ml_models_online_retail=mapping_ml_models_online_retail,
                             data_output=data_output,
                             metrics=metrics)
 
