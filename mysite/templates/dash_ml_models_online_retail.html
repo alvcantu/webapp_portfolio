@@ -66,6 +66,25 @@
   <div style="width:80%; height: 400px;">
     <canvas id="performanceChart"></canvas>
   </div>
+
+  <h3>Select a model to view its description and my approach to the problem</h3>
+  <!-- Accordion listing ML model descriptions-->
+  {% for column, data in mapping_ml_models_online_retail.items() %}
+  <button class="accordion"> {{ data['short_name'] }}</button>
+    <div>
+        <p>{{ data['description'] }}</p>
+    </div>
+  {% endfor %}
+  <!-- <button class="accordion"> JADE</button>
+    <div>
+        <p>JADEEEE</p>
+    </div> -->
+
+  <h3>Future 3 month sales predictions</h3>
+  <h4 style="width: 80%;">Assuming the average 1776 transactions per day of the whole dataset for the next 3 months.</h4>
+  <h4 style="width: 80%;">Randomnly filled combinations of Country, StockCode and CustomerID are used to predict sales for each future date, these are validated so all the combinations are valid (ex. no customer with UK as country appears as having Spain as country in the 3 month future prediction).</h4>
+  <!-- Plot of last 6 months + prediction for next 3 months -->
+
   <script>
     var ctx = document.getElementById('performanceChart').getContext('2d');
   
@@ -116,19 +135,6 @@
         }
     });
   </script>
-  
-  <h3>Select a model to view its description</h3>
-  <!-- Accordion listing ML model descriptions-->
-  <!-- {% for column, data in mapping_ml_models_online_retail.items() %}
-  <button class="accordion"> {{ data['short_name'] }}</button>
-    <div>
-        <p>{{ data['description'] }}</p>
-    </div>
-  {% endfor %} -->
-  <button class="accordion"> JADE</button>
-    <div>
-        <p>JADEEEE</p>
-    </div>
 
-  </body>
-  </html>
+</body>
+</html>

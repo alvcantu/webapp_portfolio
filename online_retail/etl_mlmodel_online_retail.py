@@ -41,7 +41,34 @@ rows = cursor.fetchall()
 # Convert the list of dictionaries to a DataFrame
 df = pd.DataFrame(rows)
 
+
+# Future df processing
+future_df = pd.read_csv('online_retail/online_retail_3month_predictions.csv')
+# Convert to valid data types
+future_df['InvoiceDate'] = pd.to_datetime(future_df['InvoiceDate'])
+
+# Feature Engineering
+future_df['Year'] = future_df['InvoiceDate'].dt.year
+future_df['Month'] = future_df['InvoiceDate'].dt.month
+future_df['Day'] = future_df['InvoiceDate'].dt.day
+future_df['DayOfWeek'] = future_df['InvoiceDate'].dt.dayofweek
+future_df['IsWeekend'] = future_df['DayOfWeek'].isin([5, 6]).astype(int)  # Saturday or Sunday
+future_df['Quarter'] = future_df['InvoiceDate'].dt.quarter
+future_df['Season'] = future_df['Month'].apply(lambda x: 'Winter' if x in [12, 1, 2] else 
+                                         'Spring' if x in [3, 4, 5] else 
+                                         'Summer' if x in [6, 7, 8] else 'Autumn')
+
+# Encode categorical variables
+le = LabelEncoder()
+future_df['CustomerID'] = le.fit_transform(future_df['CustomerID'].astype(str))
+future_df['StockCode'] = le.fit_transform(future_df['StockCode'].astype(str))
+future_df['Country'] = le.fit_transform(future_df['Country'])
+future_df['Season'] = le.fit_transform(future_df['Season'])
+
+print("Original data sample:")
 print(df.head())
+print("Future data sample:")
+print(future_df.head())
 
 # Convert to valid data types
 df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'])
@@ -73,17 +100,32 @@ model.load_model('online_retail/attempt2_xgboost_mlmodel_online_retail.json')
 
 # Make predictions
 # Only using features in the training set
+# For original data
 X = df[features]
 predictions = model.predict(X)
+# For future data
+X_future = future_df[features]
+predictions_future = model.predict(X_future)
 
 # Adding column with predictes sales to the original dataframe
 df['Predicted_Sales2'] = predictions
+# Adding column with future sales predictions
+future_df['Predicted_Sales2'] = predictions_future
 
 # Converting Predicted_Sales1 to float and rounding to two decimal places
 df['Predicted_Sales2'] = df['Predicted_Sales2'].astype(float)
 df['Predicted_Sales2'] = df['Predicted_Sales2'].round(2)
+# Converting Predicted_Sales1 to float and rounding to two decimal places
+future_df['Predicted_Sales2'] = future_df['Predicted_Sales2'].astype(float)
+future_df['Predicted_Sales2'] = future_df['Predicted_Sales2'].round(2)
 
-# Filtering df so it has only InvoiceID and Predicted_Sales1 columns
+# Drop feature engineered columns from future_df
+future_df = future_df.drop(columns=['Year', 'Month', 'Day', 'DayOfWeek', 'IsWeekend', 'Quarter', 'Season'])
+
+# Save future_df to a CSV file
+future_df.to_csv('online_retail/online_retail_3month_predictions.csv', index=False)
+
+# Filtering df so it has only InvoiceID and Predicted_Sales columns
 df_to_insert = df[['TransactionID', 'Predicted_Sales2']]
 
 print(df_to_insert.head())
