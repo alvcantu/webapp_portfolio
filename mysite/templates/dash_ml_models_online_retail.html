@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Alvaro's Self Service Data Dashboard</title>
+  <title>Alvaro's ML Predictions Dashboard</title>
   <!-- Favicon and touch icons -->
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
@@ -67,7 +67,6 @@
 
   <!-- filtered_data --->
   <div class="table-container">{{ data_output | safe }}</div>
-  <div class="table-container">{{ filtered_data| safe }}</div>
 
   <!-- Chart.js
   <div style="width:80%;">
@@ -79,10 +78,10 @@
   var chart = new Chart(ctx, {
       type: 'bar',
       data: {
-          labels: {{ filtered_data | map(attribute='prediction_type') | list | tojson }},
+          labels: {{ data_output | map(attribute='prediction_type') | list | tojson }},
           datasets: [{
               label: '{{ selected_performance_measure }}',
-              data: {{ filtered_data | map(attribute=selected_performance_measure) | list | tojson }},
+              data: {{ data_output | map(attribute=selected_performance_measure) | list | tojson }},
               backgroundColor: 'rgba(75, 192, 192, 0.2)',
               borderColor: 'rgba(75, 192, 192, 1)',
               borderWidth: 1

@@ -1,5 +1,4 @@
 # test
-import pandas as pd
 import mysql.connector
 from sklearn.metrics import mean_squared_error, r2_score
 import numpy as np
@@ -18,7 +17,6 @@ def get_db_connection():
     cursor = mydb.cursor(dictionary=True)  # This is the key change
     return mydb, cursor
 
-
 # Connect to MySQL database
 mydb, cursor = get_db_connection()
 
@@ -32,18 +30,14 @@ column_names_sql = '''
 # Fetch column names
 cursor.execute(column_names_sql)
 column_names = [row['COLUMN_NAME'] for row in cursor.fetchall()]
-
-# Function to execute queries
-def execute_and_fetch(sql, cursor):
-    cursor.execute(sql)
-    return cursor.fetchall()
+#column_names = [row[0] for row in cursor.fetchall()]
 
 # Function to generate SQL for each metric
 def generate_sql(metric, column_names):
     sql_parts = []
     for col in column_names:
         sql_parts.append(f'''
-            SELECT '{col}' AS prediction_type, {dynamic_sqls[metric].format(col=col)} AS {metric}
+            SELECT '{col}' AS prediction_type, '{metric}' AS metric ,{dynamic_sqls[metric].format(col=col)} AS value
             FROM ONR_FactTransactions
         ''')
     # Ensure there's at least one part
@@ -58,16 +52,14 @@ dynamic_sqls = {
     'RMSE': 'SQRT(AVG(POWER((Quantity * UnitPrice) - {col}, 2)))',
     'MSE': 'SUM(POW((UnitPrice * Quantity) - {col}, 2)) / COUNT(*)',
     'MAE': 'AVG(ABS((UnitPrice * Quantity) - {col}))',
-    'MAPE': '(SUM(ABS((Quantity * UnitPrice) - Predicted_Sales1) / NULLIF(Quantity * UnitPrice, 0)) / COUNT(*)) * 100'
+    'MAPE': '(SUM(ABS((Quantity * UnitPrice) - {col}) / NULLIF(Quantity * UnitPrice, 0)) / COUNT(*)) * 100'
 }
 
-# Execute queries and combine results
-data_output = []
-for metric in metrics:
-    sql = generate_sql(metric, column_names)
-    if sql:  # Only attempt to execute if SQL was generated
-        results = execute_and_fetch(sql, cursor)
-        data_output.extend(results)
+# Execute queries
+selected_performance_measure = 'RMSE'#request.args.get('performance_measure', metrics[0])
+sql = generate_sql(selected_performance_measure, column_names)
+cursor.execute(sql)
+data_output = cursor.fetchall()
 
 # Close connection
 cursor.close()

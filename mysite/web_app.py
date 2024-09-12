@@ -369,27 +369,28 @@ def dash_self_service():
 @app.route('/dash_ml_models_online_retail',methods=['GET', 'POST'])
 def dash_ml_models_online_retail():
     # Mapping of column names to short names and descriptions for ml models
-    def load_mapping_ml_models_online_retail(mapping_ml_models_online_retail_path):
-        try:
-            with open(mapping_ml_models_online_retail_path, mode='r', encoding='utf-8') as file:
-                reader = csv.DictReader(file)
-                # 'column_name', 'short_name', and 'description' are headers in the CSV
-                return {
-                    row['column_name']: {
-                        'short_name': row['short_name'],
-                        'description': row['description']
-                    } for row in reader if 'column_name' in row and 'short_name' in row and 'description' in row
-                }
-        except FileNotFoundError:
-            print(f"Error: The file at {mapping_ml_models_online_retail_path} was not found.")
-            return {}
-        except KeyError as e:
-            print(f"Error: Missing expected column in CSV: {e}")
-            return {}
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-            return {}
-    mapping_ml_models_online_retail = load_mapping_ml_models_online_retail('/home/alvcantu/mysite/static/mapping_ml_models_online_retail.csv')
+    # def load_mapping_ml_models_online_retail(mapping_ml_models_online_retail_path):
+    #     try:
+    #         with open(mapping_ml_models_online_retail_path, mode='r', encoding='utf-8') as file:
+    #             reader = csv.DictReader(file)
+    #             # 'column_name', 'short_name', and 'description' are headers in the CSV
+    #             return {
+    #                 row['column_name']: {
+    #                     'short_name': row['short_name'],
+    #                     'description': row['description']
+    #                 } for row in reader if 'column_name' in row and 'short_name' in row and 'description' in row
+    #             }
+    #     except FileNotFoundError:
+    #         print(f"Error: The file at {mapping_ml_models_online_retail_path} was not found.")
+    #         return {}
+    #     except KeyError as e:
+    #         print(f"Error: Missing expected column in CSV: {e}")
+    #         return {}
+    #     except Exception as e:
+    #         print(f"An unexpected error occurred: {e}")
+    #         return {}
+    
+    # mapping_ml_models_online_retail = load_mapping_ml_models_online_retail('/home/alvcantu/mysite/static/mapping_ml_models_online_retail.csv')
 
     # Connect to MySQL database
     mydb, cursor = get_db_connection()
@@ -405,11 +406,6 @@ def dash_ml_models_online_retail():
     cursor.execute(column_names_sql)
     #column_names = [row['COLUMN_NAME'] for row in cursor.fetchall()]
     column_names = [row[0] for row in cursor.fetchall()]
-
-    # Function to execute queries
-    def execute_and_fetch(sql, cursor):
-        cursor.execute(sql)
-        return cursor.fetchall()
 
     # Function to generate SQL for each metric
     def generate_sql(metric, column_names):
@@ -431,30 +427,22 @@ def dash_ml_models_online_retail():
         'RMSE': 'SQRT(AVG(POWER((Quantity * UnitPrice) - {col}, 2)))',
         'MSE': 'SUM(POW((UnitPrice * Quantity) - {col}, 2)) / COUNT(*)',
         'MAE': 'AVG(ABS((UnitPrice * Quantity) - {col}))',
-        'MAPE': '(SUM(ABS((Quantity * UnitPrice) - Predicted_Sales1) / NULLIF(Quantity * UnitPrice, 0)) / COUNT(*)) * 100'
+        'MAPE': '(SUM(ABS((Quantity * UnitPrice) - {col}) / NULLIF(Quantity * UnitPrice, 0)) / COUNT(*)) * 100'
     }
 
-    # Execute queries and combine results
-    data_output = []
-    for metric in metrics:
-        sql = generate_sql(metric, column_names)
-        if sql:  # Only attempt to execute if SQL was generated
-            results = execute_and_fetch(sql, cursor)
-            data_output.extend(results)
-
-    # Filter data by selected metric
+    # Execute queries
     selected_performance_measure = request.args.get('performance_measure', metrics[0])
-    filtered_data = [item for item in data_output if item[1] == selected_performance_measure]
+    sql = generate_sql(selected_performance_measure, column_names)
+    cursor.execute(sql)
+    data_output = cursor.fetchall()
 
     # Close connection
     cursor.close()
     mydb.close()
     
     return render_template('dash_ml_models_online_retail.html', 
-                            mapping_ml_models_online_retail=mapping_ml_models_online_retail,
                             selected_performance_measure=selected_performance_measure,
                             data_output=data_output,
-                            filtered_data=filtered_data,
                             metrics=metrics)
 
 @app.route('/dash_southpark')
