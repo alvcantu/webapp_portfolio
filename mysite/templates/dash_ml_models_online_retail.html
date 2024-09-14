@@ -25,7 +25,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.2.1/chartjs-plugin-zoom.min.js"></script> 
 </head>
 <body>
-
+  <!-- Menu toggle button -->
   <button class="menu-toggle">☰</button>
   <nav class="sidebar">
     <ul>
@@ -59,12 +59,19 @@
     </select>
   </form>
 
-  <!-- filtered_data --->
-  <div class="table-container">{{ data_output | safe }}</div>
-
   <!-- Chart.js -->
   <div style="width:80%; height: 400px;">
     <canvas id="performanceChart"></canvas>
+  </div>
+
+  <h3>Future 3 month sales predictions</h3>
+  <h4 style="width: 80%;">Assuming the average 1776 transactions per day of the whole dataset for the next 3 months.</h4>
+  <h4 style="width: 80%;">Randomnly filled combinations of Country, StockCode and CustomerID are used to predict sales for each future date, these are validated so all the combinations are valid (ex. no customer with UK as country appears as having Spain as country in the 3 month future prediction).</h4>
+  <!-- Plot of last 6 months + prediction for next 3 months -->
+   <!-- filtered_data --->
+  <!--<div class="table-container">{{ sales_data | safe }}</div> -->
+  <div style="width:80%; height: 400px;">
+    <canvas id="salesChart"></canvas>
   </div>
 
   <h3>Select a model to view its description and my approach to the problem</h3>
@@ -80,19 +87,15 @@
         <p>JADEEEE</p>
     </div> -->
 
-  <h3>Future 3 month sales predictions</h3>
-  <h4 style="width: 80%;">Assuming the average 1776 transactions per day of the whole dataset for the next 3 months.</h4>
-  <h4 style="width: 80%;">Randomnly filled combinations of Country, StockCode and CustomerID are used to predict sales for each future date, these are validated so all the combinations are valid (ex. no customer with UK as country appears as having Spain as country in the 3 month future prediction).</h4>
-  <!-- Plot of last 6 months + prediction for next 3 months -->
-
   <script>
+    // Performance chart
     var ctx = document.getElementById('performanceChart').getContext('2d');
   
-    // Extracting the labels and data from the given data_output
-    var labels = {{ data_output | tojson }}.map(function(item) {
+    // Extracting the labels and data from the given performance_data
+    var labels = {{ performance_data | tojson }}.map(function(item) {
         return item[0]; // Predicted Sales labels
     });
-    var dataValues = {{ data_output | tojson }}.map(function(item) {
+    var dataValues = {{ performance_data | tojson }}.map(function(item) {
         return item[2]; // Peformance metric values
     });
   
@@ -105,7 +108,7 @@
                 data: dataValues, // Metric values on x-axis
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                 borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
+                borderWidth: 1,
             }]
         },
         options: {
@@ -128,12 +131,93 @@
             plugins: {
                 legend: {
                     display: false
+                },
+                datalabels: {
+                    color: 'white',
+                    anchor: 'end',
+                    align: 'end',
+                    offset: 10,  // Increased offset to push the labels further inward from the bar's end
+                    font: {
+                    size: 12
+                    }
                 }
             },
             responsive: true,
             maintainAspectRatio: false
         }
     });
+  </script>
+
+  <script>
+
+      // Function to generate a random RGBA color
+      function getRandomColor() {
+        const r = Math.floor(Math.random() * 255);
+        const g = Math.floor(Math.random() * 255);
+        const b = Math.floor(Math.random() * 255);
+        return `rgba(${r}, ${g}, ${b}, 1)`;
+      }
+      // Assuming 'salesData' is passed from the backend as a JSON object
+      const salesData = {{ sales_data | tojson }};
+      
+      // Extract labels (InvoiceDate) and datasets (Total_Actual_Sales and Total_Predicted_Sales)
+      const labels = salesData.map(entry => entry.InvoiceDate.split(' ')[0]); // Get the date part only
+      const datasets = [];
+      
+      // Add Total Actual Sales to the datasets
+      datasets.push({
+          label: 'Total Actual Sales',
+          data: salesData.map(entry => parseFloat(entry.Total_Actual_Sales)),
+          borderColor: 'rgba(76,175,80)', // Consistent color for Total Actual Sales, Apple Green company one
+          fill: false,
+      });
+      
+      // Dynamically add all Total Predicted Sales columns to the datasets
+      for (let i = 1; i <= Object.keys(salesData[0]).filter(key => key.startsWith('Total_Predicted_Sales')).length; i++) {
+          datasets.push({
+              label: `Total Predicted Sales ${i}`,
+              data: salesData.map(entry => parseFloat(entry[`Total_Predicted_Sales${i}`]) || null), // Handle NaN with null
+              borderColor: getRandomColor(), // Assign a unique random color for each predicted sales line
+              fill: false,
+          });
+      }
+
+      // Create the Chart.js line chart
+      const ctx = document.getElementById('salesChart').getContext('2d');
+      const salesChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+              labels: labels, // X-axis labels (InvoiceDate)
+              datasets: datasets // Dynamic datasets
+          },
+          options: {
+              responsive: true,
+              plugins: {
+                  legend: {
+                      display: true
+                  }
+              },
+              scales: {
+                  x: {
+                      type: 'time',
+                      time: {
+                          unit: 'day'
+                      },
+                      title: {
+                          display: true,
+                          text: 'Invoice Date'
+                      }
+                  },
+                  y: {
+                      title: {
+                          display: true,
+                          text: 'Sales Amount'
+                      }
+                  }
+              },
+              backgroundColor: 'transparent', // Transparent background
+          }
+      });
   </script>
 
 </body>

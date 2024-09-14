@@ -43,7 +43,7 @@ def is_read_only_query(sql_query):
     return True, None
 
 # Prepare data for Chart.js
-def prepare_data_for_chart(data_output):
+def prepare_data_for_chart(sql_query):
     # Connect to MySQL database
     mydb, cursor = get_db_connection()
 
@@ -358,7 +358,7 @@ def dash_self_service():
             data_output = get_table_html(sql_query)
 
         else:
-            data_output = TEST_prepare_data_for_chart(sql_query)
+            data_output = prepare_data_for_chart(sql_query)
     
     return render_template('dash_self_service.html',
                            selected_visual=selected_visual,
@@ -424,7 +424,57 @@ def dash_ml_models_online_retail():
     # Execute queries
     sql = generate_sql(selected_performance_measure, column_names)
     cursor.execute(sql)
-    data_output = cursor.fetchall()
+    performance_data = cursor.fetchall()    
+
+    # Query to extract total sales per day
+    sales_per_day_sql = '''
+        SELECT
+            DATE(InvoiceDate) AS InvoiceDate,
+            SUM(Quantity * UnitPrice) AS Total_Actual_Sales
+        FROM
+            ONR_DimInvoice AS inv
+        JOIN
+            ONR_FactTransactions AS trans ON inv.InvoiceID = trans.InvoiceID
+        GROUP BY
+            DATE(InvoiceDate)
+        ORDER BY
+            Total_Actual_Sales
+        '''
+    cursor.execute(sales_per_day_sql)
+    actual_sales_per_day = cursor.fetchall()
+
+    # Convert SQL query result to DataFrame
+    actual_sales_df = pd.DataFrame(actual_sales_per_day, columns=['InvoiceDate', 'Total_Actual_Sales'])
+    actual_sales_df['InvoiceDate'] = pd.to_datetime(actual_sales_df['InvoiceDate'])
+
+    # Read prediction csv
+    prediction_df = pd.read_csv('online_retail/online_retail_3month_predictions.csv')
+    # Convert to valid data types
+    prediction_df['InvoiceDate'] = pd.to_datetime(prediction_df['InvoiceDate'])
+    # Group by InvoiceDate and sum all columns starting with 'Predicted_Sales'
+    columns_to_sum = [col for col in prediction_df.columns if col.startswith('Predicted_Sales')]
+    grouped_df = prediction_df.groupby('InvoiceDate')[columns_to_sum].sum().reset_index()
+
+    # Rename columns for clarity
+    grouped_df = grouped_df.rename(columns={col: f'Total_{col}' for col in columns_to_sum})
+
+    # Ensure both DataFrames are sorted by InvoiceDate
+    grouped_df = grouped_df.sort_values('InvoiceDate')
+    actual_sales_df = actual_sales_df.sort_values('InvoiceDate')
+
+    # Merge the DataFrames on InvoiceDate
+    # We'll use merge instead of concat to handle potential date mismatches
+    merged_df = pd.merge(
+        actual_sales_df,
+        grouped_df,
+        on='InvoiceDate',
+        how='outer'  # Use 'outer' if you want to keep all dates from both DataFrames
+    )
+
+    # Reorder columns to have InvoiceDate first, then Total_Actual_Sales, followed by Total_Predicted_Sales columns
+    columns_order = ['InvoiceDate', 'Total_Actual_Sales'] + [col for col in merged_df.columns if col.startswith('Total_Predicted_Sales')]
+    merged_df = merged_df[columns_order]
+    sales_data = merged_df.to_dict('records')
 
     # Close connection
     cursor.close()
@@ -433,7 +483,8 @@ def dash_ml_models_online_retail():
     return render_template('dash_ml_models_online_retail.html', 
                             selected_performance_measure=selected_performance_measure,
                             mapping_ml_models_online_retail=mapping_ml_models_online_retail,
-                            data_output=data_output,
+                            performance_data=performance_data,
+                            sales_data=sales_data,
                             metrics=metrics)
 
 @app.route('/dash_southpark')

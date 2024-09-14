@@ -1,12 +1,20 @@
 # test
+import pandas as pd
 import mysql.connector
-from sklearn.metrics import mean_squared_error, r2_score
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-import xgboost as xgb
-from datetime import datetime
 
+# Extract total sales per day from prediction csv
+# Read prediction csv
+prediction_df = pd.read_csv('online_retail/online_retail_3month_predictions.csv')
+# Convert to valid data types
+prediction_df['InvoiceDate'] = pd.to_datetime(prediction_df['InvoiceDate'])
+# Group by InvoiceDate and sum all columns starting with 'Predicted_Sales'
+columns_to_sum = [col for col in prediction_df.columns if col.startswith('Predicted_Sales')]
+grouped_df = prediction_df.groupby('InvoiceDate')[columns_to_sum].sum().reset_index()
+
+# Rename columns for clarity
+grouped_df = grouped_df.rename(columns={col: f'Total_{col}' for col in columns_to_sum})
+
+# Connect to MySQL database
 def get_db_connection():
     mydb = mysql.connector.connect(
         host="alvcantu.mysql.pythonanywhere-services.com",
@@ -14,55 +22,74 @@ def get_db_connection():
         password="h63Efp09-d",
         database="alvcantu$default"
     )
-    cursor = mydb.cursor(dictionary=True)  # This is the key change
+    cursor = mydb.cursor()
     return mydb, cursor
 
 # Connect to MySQL database
 mydb, cursor = get_db_connection()
 
-# SQL query that returns all column names for all models
-column_names_sql = '''
-    SELECT column_name
-    FROM information_schema.columns
-    WHERE table_name = 'ONR_FactTransactions'
-    AND column_name LIKE 'Predicted_Sales%';
+# Query to extract total sales per day
+sales_per_day_sql = '''
+    SELECT
+        DATE(InvoiceDate) AS InvoiceDate,
+        SUM(Quantity * UnitPrice) AS Total_Actual_Sales
+    FROM
+        ONR_DimInvoice AS inv
+    JOIN
+        ONR_FactTransactions AS trans ON inv.InvoiceID = trans.InvoiceID
+    GROUP BY
+        DATE(InvoiceDate)
+    ORDER BY
+        Total_Actual_Sales
     '''
-# Fetch column names
-cursor.execute(column_names_sql)
-column_names = [row['COLUMN_NAME'] for row in cursor.fetchall()]
-#column_names = [row[0] for row in cursor.fetchall()]
 
-# Function to generate SQL for each metric
-def generate_sql(metric, column_names):
-    sql_parts = []
-    for col in column_names:
-        sql_parts.append(f'''
-            SELECT '{col}' AS prediction_type, '{metric}' AS metric ,{dynamic_sqls[metric].format(col=col)} AS value
-            FROM ONR_FactTransactions
-        ''')
-    # Ensure there's at least one part
-    if not sql_parts:
-        return ""
-    # Join with UNION ALL between all parts except the last one
-    return ' UNION ALL '.join(sql_parts) + ';'
+cursor.execute(sales_per_day_sql)
+actual_sales_per_day = cursor.fetchall()
 
-# Define metrics
-metrics = ['RMSE', 'MSE', 'MAE', 'MAPE']
-dynamic_sqls = {
-    'RMSE': 'SQRT(AVG(POWER((Quantity * UnitPrice) - {col}, 2)))',
-    'MSE': 'SUM(POW((UnitPrice * Quantity) - {col}, 2)) / COUNT(*)',
-    'MAE': 'AVG(ABS((UnitPrice * Quantity) - {col}))',
-    'MAPE': '(SUM(ABS((Quantity * UnitPrice) - {col}) / NULLIF(Quantity * UnitPrice, 0)) / COUNT(*)) * 100'
-}
+# Convert SQL query result to DataFrame
+actual_sales_df = pd.DataFrame(actual_sales_per_day, columns=['InvoiceDate', 'Total_Actual_Sales'])
+actual_sales_df['InvoiceDate'] = pd.to_datetime(actual_sales_df['InvoiceDate'])
 
-# Execute queries
-selected_performance_measure = 'RMSE'#request.args.get('performance_measure', metrics[0])
-sql = generate_sql(selected_performance_measure, column_names)
-cursor.execute(sql)
-data_output = cursor.fetchall()
+# Ensure both DataFrames are sorted by InvoiceDate
+grouped_df = grouped_df.sort_values('InvoiceDate')
+actual_sales_df = actual_sales_df.sort_values('InvoiceDate')
+
+# Merge the DataFrames on InvoiceDate
+# We'll use merge instead of concat to handle potential date mismatches
+merged_df = pd.merge(
+    actual_sales_df,
+    grouped_df,
+    on='InvoiceDate',
+    how='outer'  # Use 'outer' if you want to keep all dates from both DataFrames
+)
+
+# Reorder columns to have InvoiceDate first, then Total_Actual_Sales, followed by Total_Predicted_Sales columns
+columns_order = ['InvoiceDate', 'Total_Actual_Sales'] + [col for col in merged_df.columns if col.startswith('Total_Predicted_Sales')]
+merged_df = merged_df[columns_order]
+
+# Filter the dataframe to include only rows where Total_Predicted_Sales2 is not NaN
+filtered_df = merged_df[merged_df['Total_Predicted_Sales2'].notna()]
+
+# Add a new column 'avgsalespertransaction'
+filtered_df['avgsalespertransaction'] = filtered_df['Total_Predicted_Sales2'] / 1776
+
+# Select only the desired columns
+result_df = filtered_df[['InvoiceDate', 'Total_Actual_Sales', 'Total_Predicted_Sales2', 'avgsalespertransaction']]
+
+# Print out the dataframe
+print(result_df.head())
+
+print("Average avgsalespertransaction:")
+print(result_df['avgsalespertransaction'].mean())
+print("Median avgsalespertransaction:")
+print(result_df['avgsalespertransaction'].median())
+print("Standard deviation avgsalespertransaction:")
+print(result_df['avgsalespertransaction'].std())
+print("Minimum avgsalespertransaction:")
+print(result_df['avgsalespertransaction'].min())
+print("Maximum avgsalespertransaction:")
+print(result_df['avgsalespertransaction'].max())
 
 # Close connection
 cursor.close()
 mydb.close()
-
-print(data_output)
