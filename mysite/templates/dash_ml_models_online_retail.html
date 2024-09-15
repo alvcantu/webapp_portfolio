@@ -20,9 +20,11 @@
   <!-- jQuery -->
   <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.1/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.2.1/chartjs-plugin-zoom.min.js"></script> 
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 </head>
 <body>
   <!-- Menu toggle button -->
@@ -49,14 +51,25 @@
   <h1>ML Predictions Dashboard (WIP)</h1>
   <h2>All models are meant to predict sales for an online retail business using historical transaction data.</h2>
 
+  <h3>Select a model to view its description and my approach to the problem</h3>
+  <!-- <div class="table-container">{{ mapping_ml_models_online_retail | safe }}</div> -->
+  <!-- Accordion listing ML model descriptions-->
+  {% for row in mapping_ml_models_online_retail %}
+  <button class="accordion">{{row[column_name]}}, {{ row['short_name'] }}</button>
+  <div class="panel">
+      <p>{{ row['description'] }}</p>
+  </div>
+{% endfor %}
+
+
   <!-- Filter form -->
-  <form id="filterForm" onchange="this.submit()"></form>
-    <label for="performance_measure" >Perfomance Measure:</label>
-    <select name="performance_measure" id="performance_measure">
-      {% for metric in metrics %}
-      <option value="{{ metric }}" {% if selected_performance_measure == metric %}selected{% endif %}>{{ metric }}</option>
-      {% endfor %}
-    </select>
+  <form id="filterForm" onchange="this.submit()">
+      <label for="performance_measure">Performance Measure:</label>
+      <select name="performance_measure" id="performance_measure">
+          {% for metric in metrics %}
+          <option value="{{ metric }}" {% if selected_performance_measure == metric %}selected{% endif %}>{{ metric }}</option>
+          {% endfor %}
+      </select>
   </form>
 
   <!-- Chart.js -->
@@ -66,26 +79,13 @@
 
   <h3>Future 3 month sales predictions</h3>
   <h4 style="width: 80%;">Assuming the average 1776 transactions per day of the whole dataset for the next 3 months.</h4>
-  <h4 style="width: 80%;">Randomnly filled combinations of Country, StockCode and CustomerID are used to predict sales for each future date, these are validated so all the combinations are valid (ex. no customer with UK as country appears as having Spain as country in the 3 month future prediction).</h4>
+  <h4 style="width: 80%;">Randomnly filled combinations of Country, StockCode and CustomerID are used to predict sales for each future dates, these are validated so all the combinations are valid (ex. no customer with UK as country appears as having Spain as country in the 3 month future prediction).</h4>
+  <h4 style="width: 80%;">Given the mistake in Predicted_Sales1 of using determenistic features when training the model, its crossed out by default as the values are too out of range and distort the chart.</h4>
   <!-- Plot of last 6 months + prediction for next 3 months -->
-   <!-- filtered_data --->
-  <!--<div class="table-container">{{ sales_data | safe }}</div> -->
   <div style="width:80%; height: 400px;">
     <canvas id="salesChart"></canvas>
   </div>
-
-  <h3>Select a model to view its description and my approach to the problem</h3>
-  <!-- Accordion listing ML model descriptions-->
-  {% for column, data in mapping_ml_models_online_retail.items() %}
-  <button class="accordion"> {{ data['short_name'] }}</button>
-    <div>
-        <p>{{ data['description'] }}</p>
-    </div>
-  {% endfor %}
-  <!-- <button class="accordion"> JADE</button>
-    <div>
-        <p>JADEEEE</p>
-    </div> -->
+  
 
   <script>
     // Performance chart
@@ -112,19 +112,33 @@
             }]
         },
         options: {
-            indexAxis: 'y', // This makes it a horizontal bar chart (flips x and y axis)
+            indexAxis: 'y', // This makes it a horizontal bar chart
             scales: {
                 x: {
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: '{{ selected_performance_measure }}' // X-axis title
+                        text: '{{ selected_performance_measure }}', // X-axis title
+                        color: 'white' // Color of the title text
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)' // Light white for grid lines for visibility
+                    },
+                    ticks: {
+                        color: 'white' // Color of the tick labels
                     }
                 },
                 y: {
                     title: {
                         display: true,
-                        text: 'Prediction Type' // Y-axis title
+                        text: 'Prediction Type', // Y-axis title
+                        color: 'white' // Color of the title text
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)' // Light white for grid lines
+                    },
+                    ticks: {
+                        color: 'white' // Color of the tick labels
                     }
                 }
             },
@@ -133,91 +147,134 @@
                     display: false
                 },
                 datalabels: {
-                    color: 'white',
                     anchor: 'end',
                     align: 'end',
-                    offset: 10,  // Increased offset to push the labels further inward from the bar's end
+                    color: 'white', // Color of the data labels
                     font: {
                     size: 12
+                    },
+                    formatter: (value, ctx) => {
+                        return value; // Display the value at the end of each bar
                     }
                 }
             },
             responsive: true,
             maintainAspectRatio: false
-        }
+        },
+        plugins: [ChartDataLabels] // Ensure this plugin is registered if you're using Chart.js v3.x or later
     });
   </script>
 
   <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        
+        const salesData = {{ sales_data | tojson }};
 
-      // Function to generate a random RGBA color
-      function getRandomColor() {
-        const r = Math.floor(Math.random() * 255);
-        const g = Math.floor(Math.random() * 255);
-        const b = Math.floor(Math.random() * 255);
-        return `rgba(${r}, ${g}, ${b}, 1)`;
-      }
-      // Assuming 'salesData' is passed from the backend as a JSON object
-      const salesData = {{ sales_data | tojson }};
-      
-      // Extract labels (InvoiceDate) and datasets (Total_Actual_Sales and Total_Predicted_Sales)
-      const labels = salesData.map(entry => entry.InvoiceDate.split(' ')[0]); // Get the date part only
-      const datasets = [];
-      
-      // Add Total Actual Sales to the datasets
-      datasets.push({
-          label: 'Total Actual Sales',
-          data: salesData.map(entry => parseFloat(entry.Total_Actual_Sales)),
-          borderColor: 'rgba(76,175,80)', // Consistent color for Total Actual Sales, Apple Green company one
-          fill: false,
-      });
-      
-      // Dynamically add all Total Predicted Sales columns to the datasets
-      for (let i = 1; i <= Object.keys(salesData[0]).filter(key => key.startsWith('Total_Predicted_Sales')).length; i++) {
-          datasets.push({
-              label: `Total Predicted Sales ${i}`,
-              data: salesData.map(entry => parseFloat(entry[`Total_Predicted_Sales${i}`]) || null), // Handle NaN with null
-              borderColor: getRandomColor(), // Assign a unique random color for each predicted sales line
-              fill: false,
-          });
-      }
+        // Extract labels (InvoiceDate) and datasets (Total_Actual_Sales and Total_Predicted_Sales)
+        const labels = salesData.map(entry => entry.InvoiceDate.split(' ')[0]); // Get the date part only
+        const datasets = [];
 
-      // Create the Chart.js line chart
-      const ctx = document.getElementById('salesChart').getContext('2d');
-      const salesChart = new Chart(ctx, {
-          type: 'line',
-          data: {
-              labels: labels, // X-axis labels (InvoiceDate)
-              datasets: datasets // Dynamic datasets
-          },
-          options: {
-              responsive: true,
-              plugins: {
-                  legend: {
-                      display: true
-                  }
-              },
-              scales: {
-                  x: {
-                      type: 'time',
-                      time: {
-                          unit: 'day'
-                      },
-                      title: {
-                          display: true,
-                          text: 'Invoice Date'
-                      }
-                  },
-                  y: {
-                      title: {
-                          display: true,
-                          text: 'Sales Amount'
-                      }
-                  }
-              },
-              backgroundColor: 'transparent', // Transparent background
-          }
-      });
+        // Add Total Actual Sales to the datasets
+        datasets.push({
+            label: 'Total Actual Sales',
+            data: salesData.map(entry => entry.Total_Actual_Sales !== null ? parseFloat(entry.Total_Actual_Sales) : null),
+            borderColor: 'rgba(76,175,80)', // Consistent color for Total Actual Sales
+            fill: false,
+        });
+
+        // Dynamically add all Total Predicted Sales columns to the datasets
+        // Function to generate lighter red color for each predicted sales line
+        function getRandomRedColor(i, maxPredictions) {
+            // The red component increases as i increases, making the color lighter
+            const minRed = 128 + Math.floor((i / maxPredictions) * 127); // Minimum red starts from 128 and increases
+            const r = minRed + Math.floor(Math.random() * (255 - minRed)); // Random value above minRed
+            
+            // Green and Blue decrease in potential max value as i increases to ensure red dominance
+            const maxGreenBlue = 128 - Math.floor((i / maxPredictions) * 64); // Max value for G&B decreases
+            const g = Math.floor(Math.random() * maxGreenBlue);
+            const b = Math.floor(Math.random() * maxGreenBlue);
+            
+            return `rgba(${r}, ${g}, ${b}, 1)`;
+        }
+        // Assuming maxPredictions is known or can be calculated from the data structure
+        const maxPredictions = Object.keys(salesData[0]).filter(key => key.startsWith('Total_Predicted_Sales')).length;
+
+        for (let i = 1; i <= maxPredictions; i++) {
+            datasets.push({
+                label: `Total Predicted Sales ${i}`,
+                data: salesData.map(entry => entry[`Total_Predicted_Sales${i}`] !== null ? parseFloat(entry[`Total_Predicted_Sales${i}`]) : null),
+                borderColor: getRandomRedColor(i, maxPredictions), // Color gets lighter as i increases
+                fill: false,
+                hidden: i==1 ? true : false // Crossed out the Total Predicted Sales 1 since it has mistake
+            });
+        }
+
+
+        // Create the Chart.js line chart
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        const salesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels, // X-axis labels (InvoiceDate)
+                datasets: datasets // Dynamic datasets
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: 'white'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Invoice Date',
+                            color: 'white' // Color of the title text
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)' // Light white for grid lines for visibility
+                        },
+                        ticks: {
+                            color: 'white' // Color of the tick labels
+                            // // Format the date to a readable format
+                            // callback: function(value, index, values) {
+                            //     // Assuming the value is in the format Timestamp('2010-12-01 00:00:00')
+                            //     const match = value.match(/Timestamp\('(\d{4}-\d{2}-\d{2}) \d{2}:\d{2}:\d{2}'\)/);
+                            //     if (match) {
+                            //         const date = new Date(match[1]);
+                            //         return date.toLocaleDateString('en-US', {
+                            //             year: 'numeric',
+                            //             month: 'short',
+                            //             day: 'numeric'
+                            //         });
+                            //     }
+                            //     return value;
+                            // }
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Sales Amount',
+                            color: 'white' // Color of the title text
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)' // Light white for grid lines for visibility
+                        },
+                        ticks: {
+                            color: 'white' // Color of the tick labels
+                        }
+                    }
+                },
+                backgroundColor: 'transparent', // Transparent background
+                spangaps: false,
+            }
+        });
+    });
   </script>
 
 </body>

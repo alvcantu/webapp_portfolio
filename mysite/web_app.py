@@ -7,6 +7,7 @@ import mysql.connector
 from mysql.connector import Error
 from html import escape
 import pandas as pd
+import numpy as np
 import os
 from graphviz import Digraph
 import sqlparse
@@ -39,7 +40,7 @@ def is_read_only_query(sql_query):
     # Check if the query is read-only
     if parsed.get_type().upper() not in ['SELECT', 'SHOW', 'DESCRIBE', 'DESC', 'EXPLAIN']:
         return False, "Error: Only read-only queries are allowed to avoid modifying the dataset."
-    
+
     return True, None
 
 # Prepare data for Chart.js
@@ -195,7 +196,7 @@ def get_db_description(data_mart=None):
         cursor.execute(f"SHOW TABLES LIKE '{data_mart}_%'")
     else:
         cursor.execute("SHOW TABLES")
-    
+
     tables = cursor.fetchall()
 
     # Dictionary to hold descriptions of all tables
@@ -205,9 +206,9 @@ def get_db_description(data_mart=None):
     for (table_name,) in tables:
         # Query to get the schema information for the current table
         query = f"""
-        SELECT COLUMN_NAME AS 'Field', COLUMN_TYPE AS 'Type', IS_NULLABLE AS 'Null', 
+        SELECT COLUMN_NAME AS 'Field', COLUMN_TYPE AS 'Type', IS_NULLABLE AS 'Null',
                 COLUMN_KEY AS 'Key', COLUMN_COMMENT AS 'Comment'
-        FROM information_schema.COLUMNS 
+        FROM information_schema.COLUMNS
         WHERE TABLE_NAME ='{table_name}'
         """
         cursor.execute(query)
@@ -359,7 +360,7 @@ def dash_self_service():
 
         else:
             data_output = prepare_data_for_chart(sql_query)
-    
+
     return render_template('dash_self_service.html',
                            selected_visual=selected_visual,
                            sql_query=sql_query,
@@ -368,23 +369,25 @@ def dash_self_service():
 
 @app.route('/dash_ml_models_online_retail',methods=['GET', 'POST'])
 def dash_ml_models_online_retail():
-    # Mapping of column names to short names and descriptions for ml models
-    def load_mapping_ml_models_online_retail(mapping_ml_models_online_retail_path):
-        with open(mapping_ml_models_online_retail_path, mode='r', encoding='utf-8') as file:
-            reader = csv.DictReader(file)
-            # 'column_name', 'short_name', and 'description' are headers in the CSV
-            return {
-                row['column_name']: {
-                    'short_name': row['short_name'],
-                    'description': row['description']
-                } for row in reader if 'column_name' in row and 'short_name' in row and 'description' in row
-            }
-    
-    mapping_ml_models_online_retail = load_mapping_ml_models_online_retail('/home/alvcantu/mysite/static/mapping_ml_models_online_retail.csv')
 
     # Connect to MySQL database
     mydb, cursor = get_db_connection()
 
+    # Read csv mapping file mapping_ml_models_online_retail.csv
+    def read_mapping_ml_models_online_retail(filepath):
+            result = []
+            with open(filepath, mode='r', encoding='utf-8') as file:
+                csv_reader = csv.DictReader(file)
+                for row in csv_reader:
+                    result.append(dict(row))
+            return result
+
+    mapping_ml_models_online_retail = read_mapping_ml_models_online_retail('/home/alvcantu/mysite/static/mapping_ml_models_online_retail.csv')
+    # Ensure that mapping_ml_models_online_retail is a dictionary
+    # mapping_ml_models_online_retail= {row['short_name']: row for row in mapping_ml_models_online_retail}
+
+
+    # Back-end for first chart.js showing performance per model, performance_data is pushed to front-end
     # SQL query that returns all column names for all models
     column_names_sql = '''
         SELECT column_name
@@ -415,17 +418,19 @@ def dash_ml_models_online_retail():
     metrics = ['RMSE', 'MSE', 'MAE', 'MAPE']
     selected_performance_measure = request.args.get('performance_measure', metrics[0])
     dynamic_sqls = {
-        'RMSE': 'SQRT(AVG(POWER((Quantity * UnitPrice) - {col}, 2)))',
-        'MSE': 'SUM(POW((UnitPrice * Quantity) - {col}, 2)) / COUNT(*)',
-        'MAE': 'AVG(ABS((UnitPrice * Quantity) - {col}))',
-        'MAPE': '(SUM(ABS((Quantity * UnitPrice) - {col}) / NULLIF(Quantity * UnitPrice, 0)) / COUNT(*)) * 100'
+        'RMSE': 'ROUND(SQRT(AVG(POWER((Quantity * UnitPrice) - {col}, 2))), 2)',
+        'MSE': 'ROUND(SUM(POW((UnitPrice * Quantity) - {col}, 2)) / COUNT(*), 2)',
+        'MAE': 'ROUND(AVG(ABS((UnitPrice * Quantity) - {col})), 2)',
+        'MAPE': 'ROUND((SUM(ABS((Quantity * UnitPrice) - {col}) / NULLIF(Quantity * UnitPrice, 0)) / COUNT(*)) * 100, 2)'
     }
 
     # Execute queries
     sql = generate_sql(selected_performance_measure, column_names)
     cursor.execute(sql)
-    performance_data = cursor.fetchall()    
+    performance_data = cursor.fetchall()
 
+
+    # Back-end for second chart.js showing actual and predicted sales per day, sales_data is pushed to front-end
     # Query to extract total sales per day
     sales_per_day_sql = '''
         SELECT
@@ -474,13 +479,16 @@ def dash_ml_models_online_retail():
     # Reorder columns to have InvoiceDate first, then Total_Actual_Sales, followed by Total_Predicted_Sales columns
     columns_order = ['InvoiceDate', 'Total_Actual_Sales'] + [col for col in merged_df.columns if col.startswith('Total_Predicted_Sales')]
     merged_df = merged_df[columns_order]
+    # Replace NaN values with None (null in JSON)
+    merged_df = merged_df.replace({np.nan: None})
+    # Convert to dictionary for JSON serialization
     sales_data = merged_df.to_dict('records')
 
     # Close connection
     cursor.close()
     mydb.close()
-    
-    return render_template('dash_ml_models_online_retail.html', 
+
+    return render_template('dash_ml_models_online_retail.html',
                             selected_performance_measure=selected_performance_measure,
                             mapping_ml_models_online_retail=mapping_ml_models_online_retail,
                             performance_data=performance_data,
@@ -668,7 +676,7 @@ def dash_stocks():
 
     return render_template('dash_stocks.html',
                            company_names=company_names,
-                           company_data=company_data)    
+                           company_data=company_data)
 
 @app.route('/documentation')
 def documentation():

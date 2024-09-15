@@ -35,6 +35,7 @@ window.addEventListener('resize', () => {
 // Logic for accordions
 var acc = document.getElementsByClassName("accordion");
 var i;
+
 for (i = 0; i < acc.length; i++) {
   acc[i].addEventListener("click", function() {
     this.classList.toggle("active");
@@ -43,8 +44,8 @@ for (i = 0; i < acc.length; i++) {
       panel.style.display = "none";
       panel.style.maxHeight = null;
     } else {
-      panel.style.display = "block"; // Ensure this line is here to show the panel
-      panel.style.maxHeight = panel.scrollHeight + "px";
+      panel.style.display = "block"; // Ensures the panel is shown
+      panel.style.maxHeight = panel.scrollHeight + "px"; // Expands the panel
     }
   });
 }
