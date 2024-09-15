@@ -373,20 +373,6 @@ def dash_ml_models_online_retail():
     # Connect to MySQL database
     mydb, cursor = get_db_connection()
 
-    # Read csv mapping file mapping_ml_models_online_retail.csv
-    def read_mapping_ml_models_online_retail(filepath):
-            result = []
-            with open(filepath, mode='r', encoding='utf-8') as file:
-                csv_reader = csv.DictReader(file)
-                for row in csv_reader:
-                    result.append(dict(row))
-            return result
-
-    mapping_ml_models_online_retail = read_mapping_ml_models_online_retail('/home/alvcantu/mysite/static/mapping_ml_models_online_retail.csv')
-    # Ensure that mapping_ml_models_online_retail is a dictionary
-    # mapping_ml_models_online_retail= {row['short_name']: row for row in mapping_ml_models_online_retail}
-
-
     # Back-end for first chart.js showing performance per model, performance_data is pushed to front-end
     # SQL query that returns all column names for all models
     column_names_sql = '''
@@ -490,7 +476,6 @@ def dash_ml_models_online_retail():
 
     return render_template('dash_ml_models_online_retail.html',
                             selected_performance_measure=selected_performance_measure,
-                            mapping_ml_models_online_retail=mapping_ml_models_online_retail,
                             performance_data=performance_data,
                             sales_data=sales_data,
                             metrics=metrics)

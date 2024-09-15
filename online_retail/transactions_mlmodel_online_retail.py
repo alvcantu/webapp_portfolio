@@ -58,7 +58,11 @@ df['Season'] = df['Month'].apply(lambda x: 'Winter' if x in [12, 1, 2] else
 df['WeekOfMonth'] = df['InvoiceDate'].apply(lambda x: (x.day - 1) // 7 + 1)                                         
 # Assuming your fiscal year starts in July
 df['FiscalQuarter'] = df['Month'].apply(lambda x: (x - 7) % 12 // 3 + 1)
-df['FiscalYear'] = df['Year'] + df['Month'].apply(lambda x: 1 if x >= 7 else 0)                            
+df['FiscalYear'] = df['Year'] + df['Month'].apply(lambda x: 1 if x >= 7 else 0)
+
+# Label encoding Season feature
+le = LabelEncoder()
+df['Season'] = le.fit_transform(df['Season'])
 
 # Assume distinct_transaction_id_count is our target variable
 X = df[['Year', 'Month', 'Day', 'DayOfWeek', 'IsWeekend', 'Quarter', 'Season', 'WeekOfMonth', 'FiscalQuarter', 'FiscalYear']]
@@ -111,7 +115,7 @@ xgb_bo = BayesianOptimization(
 )
 
 # Perform the optimization
-xgb_bo.maximize(init_points=5, n_iter=25)
+xgb_bo.maximize(init_points=5, n_iter=150)
 
 # Get the best parameters
 best_params = xgb_bo.max['params']

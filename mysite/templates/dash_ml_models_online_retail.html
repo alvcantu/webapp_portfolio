@@ -52,14 +52,21 @@
   <h2>All models are meant to predict sales for an online retail business using historical transaction data.</h2>
 
   <h3>Select a model to view its description and my approach to the problem</h3>
-  <!-- <div class="table-container">{{ mapping_ml_models_online_retail | safe }}</div> -->
-  <!-- Accordion listing ML model descriptions-->
-  {% for row in mapping_ml_models_online_retail %}
-  <button class="accordion">{{row[column_name]}}, {{ row['short_name'] }}</button>
+  <!--Transactions model-->
+  <button class="accordion">Predicting transactions per day</button>
   <div class="panel">
-      <p>{{ row['description'] }}</p>
+      <p>Since the sales models are built to predict sales at a transaction level of granularity, I first build a model to predict how many transactions there will be per day. Hence I build a model based solely on date features and train it using all the transactions in the dataset. This way I can estimate the number of transactions per day without any additional data point. I chose XGBoost because of its high performance. It works by building decision trees (i.e. a serious of questions that lead to the optimal transactions amount) sequentially, testing the performance on one and then based off that creating an improved one, 'gradient boosting' in fancy terminology. It’s like having a team of experts where each new expert learns from the mistakes of the previous ones. Each 'expert' here is a decision tree, which makes decisions based on questions like 'Is the day a weekend?' or 'Does the day belong to Winter/Spring or Summer/Autumn?'. Each tree works is categorised by its usefulness in predicting the transaction count and all  together help to produce an accurate amount. I chose to optimise it to minimise the root mean squared error as that measures how much its predictions differ from actual transaction count.</p>
   </div>
-{% endfor %}
+  <!--First sales model-->
+  <button class="accordion">Predicted_Sales1, XG Boost with CV Search</button>
+  <div class="panel"> 
+    <P>First model to predict sales I built using XGBoost and RandomizedSearchCV: This model was trained on the entire dataset. I made the mistake of including the exact quantities sold and prices in my model, which directly calculate sales. This made the model too good at predicting training data but poor at generalizing to new data, a problem known as overfitting. I only included Year, Month and Day as date features, in retrospect I could’ve added many more features from the InvoiceDate column. To ensure my model could handle changes over time, like seasonal trends, I split my data in a way that respects time order. I used a technique called TimeSeriesSplit, which cross validates the results so a sample of data gets tested with training data. I chose 3 splits as its rule of thumb to use 3-5. In order to find the best settings for my model I used RandomizedSearchCV technique. It works by choosing different random combination of settings for the model and tests the results against one another, eventually the best one is chosen. Think of it like trying on different clothing outfits to see which one fits best when you look in the mirror, but instead of outfits, we're trying different model settings, and we do this multiple times to ensure we find a good match. I did 30 different rounds of 30 different outfits. The model proved worthy when looking at performance metrics but useless when applying it to new data because of the previously mentioned mistake.</P>      
+  </div>
+  <!--Second sales model-->
+  <button class="accordion">Predicted_Sales2, XG Boost with Bayesian Optimization</button>
+  <div class="panel">
+    <p>The second model to predict sales is also built using XGBoost but the hyperparemeters are chosen with BayesianOptimization. Unlike the first I did not include deterministic features like Quantity and UnitPrice. I expanded the features based off InvoiceDate so now the model is trained on Quarters and Season which can help with yearly sales fluctuations. I also used TimeSeriesSplit with 3 rounds of splits and minimised the Root Mean Squared Error or RMSE. I used Bayesian Optimization as, unlike RandomizedSearchCV technique, it learns from its mistakes. It smartly mixes testing known good areas (exploitation) with scouting new territories (exploration) using probability theory, ensuring we efficiently zoom in on the best settings for our machine learning model.The performance metrics suggest this model is worse that the first one, but given this was not trained on deterministic features that is expected. When applying to future the data there seem to be less fluctuation is sales as compared to actual, which suggest this model is not very good at estimating days of high or low sales. Additional features need to be added.</p>
+  </div>
 
 
   <!-- Filter form -->
@@ -78,9 +85,9 @@
   </div>
 
   <h3>Future 3 month sales predictions</h3>
-  <h4 style="width: 80%;">Assuming the average 1776 transactions per day of the whole dataset for the next 3 months.</h4>
-  <h4 style="width: 80%;">Randomnly filled combinations of Country, StockCode and CustomerID are used to predict sales for each future dates, these are validated so all the combinations are valid (ex. no customer with UK as country appears as having Spain as country in the 3 month future prediction).</h4>
-  <h4 style="width: 80%;">Given the mistake in Predicted_Sales1 of using determenistic features when training the model, its crossed out by default as the values are too out of range and distort the chart.</h4>
+  <h4 style="width: 80%;">Using the transactions model described above, I apply it to future 3 months of days. Then I randomnly filled combinations of Country, StockCode and CustomerID for each future dates, these are validated so all the combinations are valid (ex. no customer with UK as country appears as having Spain as country in the 3 month future prediction).</h4>
+  <h4 style="width: 80%;">The sales model are then applied to this new dataset and the results are plotted below. WIP TRANSACTION MODEL NOT APPLIED YET.</h4>
+  <h4 style="width: 80%;">Given the mistake in Predicted_Sales1 of using determenistic features when training the model, its crossed out by default since the values are too out of range and distort the chart.</h4>
   <!-- Plot of last 6 months + prediction for next 3 months -->
   <div style="width:80%; height: 400px;">
     <canvas id="salesChart"></canvas>
@@ -143,6 +150,11 @@
                 }
             },
             plugins: {
+                title: {
+                    display: true,
+                    text: 'Error metrics, lower is better',
+                    color: 'white' // Color of the title text
+                },
                 legend: {
                     display: false
                 },
@@ -176,7 +188,7 @@
 
         // Add Total Actual Sales to the datasets
         datasets.push({
-            label: 'Total Actual Sales',
+            label: 'Actual_Sales',
             data: salesData.map(entry => entry.Total_Actual_Sales !== null ? parseFloat(entry.Total_Actual_Sales) : null),
             borderColor: 'rgba(76,175,80)', // Consistent color for Total Actual Sales
             fill: false,
@@ -201,7 +213,7 @@
 
         for (let i = 1; i <= maxPredictions; i++) {
             datasets.push({
-                label: `Total Predicted Sales ${i}`,
+                label: `Predicted_Sales${i}`,
                 data: salesData.map(entry => entry[`Total_Predicted_Sales${i}`] !== null ? parseFloat(entry[`Total_Predicted_Sales${i}`]) : null),
                 borderColor: getRandomRedColor(i, maxPredictions), // Color gets lighter as i increases
                 fill: false,
@@ -259,7 +271,7 @@
                     y: {
                         title: {
                             display: true,
-                            text: 'Sales Amount',
+                            text: 'Total Sales',
                             color: 'white' // Color of the title text
                         },
                         grid: {

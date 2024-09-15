@@ -72,6 +72,8 @@ future_data = []
 # For each future date, randomly sample from the valid combinations and create feature rows
 sample_size = 1776  # Using the average # of transactions per day for the whole dataset as sample size 
 
+# ABOVE ^^^ needs to be modified with newly created transactions ml model
+
 for date in future_dates:
     # Randomly sample valid combinations for this date
     sampled_combinations = valid_combinations.sample(n=sample_size, replace=False)
