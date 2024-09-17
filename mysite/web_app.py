@@ -440,6 +440,10 @@ def dash_ml_models_online_retail():
 
     # Read prediction csv
     prediction_df = pd.read_csv('online_retail/online_retail_pivoted_perday_3month_predictions.csv')
+    # Drop all columns except for InvoiceDate and those that start with 'Total_Predicted_Sales'
+    prediction_df = prediction_df.drop(columns=[col for col in prediction_df.columns if col != 'InvoiceDate' and not col.startswith('Total_Predicted_Sales')])
+    # Convert InvoiceDate to datetime
+    prediction_df['InvoiceDate'] = pd.to_datetime(prediction_df['InvoiceDate'])
 
     # Ensure both DataFrames are sorted by InvoiceDate
     prediction_df = prediction_df.sort_values('InvoiceDate')
@@ -449,7 +453,7 @@ def dash_ml_models_online_retail():
     # We'll use merge instead of concat to handle potential date mismatches
     merged_df = pd.merge(
         actual_sales_df,
-        grouped_df,
+        prediction_df,
         on='InvoiceDate',
         how='outer'  # Use 'outer' if you want to keep all dates from both DataFrames
     )
