@@ -4,6 +4,8 @@ import datetime
 import mysql.connector
 from datetime import datetime
 import random
+import joblib
+from sklearn.preprocessing import LabelEncoder
 
 # Script creates sample data for the next 3 months for prediction models can be applied to it.
 
@@ -63,20 +65,70 @@ last_date = df['InvoiceDate'].max()
 num_months = 3
 future_dates = pd.date_range(last_date + pd.DateOffset(1), periods=num_months*30, freq='D')
 
+# Create new dataframe with future dates
+transaction_pivoted_df = pd.DataFrame({'InvoiceDate': future_dates})
+
+# Convert to valid data types
+transaction_pivoted_df['InvoiceDate'] = pd.to_datetime(transaction_pivoted_df['InvoiceDate'])
+
+# Feature Engineering
+transaction_pivoted_df['Year'] = transaction_pivoted_df['InvoiceDate'].dt.year
+transaction_pivoted_df['Month'] = transaction_pivoted_df['InvoiceDate'].dt.month
+transaction_pivoted_df['Day'] = transaction_pivoted_df['InvoiceDate'].dt.day
+transaction_pivoted_df['DayOfWeek'] = transaction_pivoted_df['InvoiceDate'].dt.dayofweek
+transaction_pivoted_df['IsWeekend'] = transaction_pivoted_df['DayOfWeek'].isin([5, 6]).astype(int)  # Saturday or Sunday
+transaction_pivoted_df['Quarter'] = transaction_pivoted_df['InvoiceDate'].dt.quarter
+transaction_pivoted_df['Season'] = transaction_pivoted_df['Month'].apply(lambda x: 'Winter' if x in [12, 1, 2] else 
+                                         'Spring' if x in [3, 4, 5] else 
+                                         'Summer' if x in [6, 7, 8] else 'Autumn')
+transaction_pivoted_df['WeekOfMonth'] = transaction_pivoted_df['InvoiceDate'].apply(lambda x: (x.day - 1) // 7 + 1)                                         
+# Assuming your fiscal year starts in July
+transaction_pivoted_df['FiscalQuarter'] = transaction_pivoted_df['Month'].apply(lambda x: (x - 7) % 12 // 3 + 1)
+transaction_pivoted_df['FiscalYear'] = transaction_pivoted_df['Year'] + transaction_pivoted_df['Month'].apply(lambda x: 1 if x >= 7 else 0)
+
+# Label encoding Season feature
+le = LabelEncoder()
+transaction_pivoted_df['Season'] = le.fit_transform(transaction_pivoted_df['Season'])
+
+# Features trasaction model was trained on
+features = transaction_pivoted_df[['Year', 'Month', 'Day', 'DayOfWeek', 'IsWeekend', 'Quarter', 'Season', 'WeekOfMonth', 'FiscalQuarter', 'FiscalYear']]
+
+# Apply transactions model to the future dates
+transactions_model = joblib.load('online_retail/transactions_count_mlmodel_online_retail.joblib')
+transactions_pred = transactions_model.predict(features)
+# Add the predicted transactions to the future dataframe
+transaction_pivoted_df['distinct_transactions'] = transactions_pred
+
+# Drop all columns from transaction_pivoted_df except InvoiceDate and distinct_transactions
+transaction_pivoted_df = transaction_pivoted_df.drop(columns=['Year', 'Month', 'Day', 'DayOfWeek', 'IsWeekend', 'Quarter', 'Season', 'WeekOfMonth', 'FiscalQuarter', 'FiscalYear'])
+
+# Create a new DataFrame by repeating 'InvoiceDate' based on 'distinct_transactions'
+expanded_df = transaction_pivoted_df.loc[transaction_pivoted_df.index.repeat(transaction_pivoted_df['distinct_transactions'])].copy()
+
+# Reset index and keep only 'InvoiceDate'
+expanded_df = expanded_df[['InvoiceDate']].reset_index(drop=True)
+
 # Get unique valid combinations of CustomerID, StockCode, and Country from the historical data
 valid_combinations = df[['CustomerID', 'StockCode', 'Country']].drop_duplicates()
 
 # Initialize an empty list to hold the future data
 future_data = []
 
-# For each future date, randomly sample from the valid combinations and create feature rows
-sample_size = 1776  # Using the average # of transactions per day for the whole dataset as sample size 
+# Count of transactions for each date in expanded_df
+date_counts = expanded_df['InvoiceDate'].value_counts().sort_index()
 
-# ABOVE ^^^ needs to be modified with newly created transactions ml model
-
+# Add random values if valud combinations for each new date in expanded_df
 for date in future_dates:
+    # Check if this date exists in expanded_df, if not, skip or handle as needed
+    if date not in date_counts:
+        print(f"Warning: Date {date} not found in expanded data. Skipping.")
+        continue
+    
+    # Get the number of rows for this date
+    sample_size = date_counts[date]
+    
     # Randomly sample valid combinations for this date
-    sampled_combinations = valid_combinations.sample(n=sample_size, replace=False)
+    sampled_combinations = valid_combinations.sample(n=sample_size, replace=True)
     
     # Create future data for each sampled combination
     for _, row in sampled_combinations.iterrows():
@@ -85,20 +137,22 @@ for date in future_dates:
         country = row['Country']
         
         future_data.append({
-            'InvoiceID': np.nan,  # InvoiceID will be NaN for future data
+            'InvoiceID': np.nan,  
             'CustomerID': customer_id,
-            'InvoiceDate': date,  # Use the current future date
+            'InvoiceDate': date,  
             'Country': country,
             'StockCode': stock_code,
-            'Description': np.nan,  # Set Description as NaN
-            'Quantity': np.nan,     # Set Quantity as NaN
-            'UnitPrice': np.nan,    # Set UnitPrice as NaN
-            'Sales': np.nan         # Sales will be NaN since Quantity * UnitPrice is undefined
+            'Description': np.nan,  
+            'Quantity': np.nan,     
+            'UnitPrice': np.nan,    
+            'Sales': np.nan         
         })
 
-# Convert the future data into a DataFrame
-future_df = pd.DataFrame(future_data)
+# Convert the list of dictionaries to a DataFrame
+transaction_df = pd.DataFrame(future_data).reset_index(drop=True)
 
-# Save the future_df to a CSV file
-future_df.to_csv('online_retail/online_retail_3month_predictions.csv', index=False)
+# Save the transaction_pivoted_df to a CSV file
+transaction_df.to_csv('online_retail/online_retail_3month_predictions.csv', index=False)
+# Save the transaction_pivoted_df to a CSV file
+transaction_pivoted_df.to_csv('online_retail/online_retail_pivoted_perday_3month_predictions.csv', index=False)
 

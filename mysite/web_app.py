@@ -439,18 +439,10 @@ def dash_ml_models_online_retail():
     actual_sales_df['InvoiceDate'] = pd.to_datetime(actual_sales_df['InvoiceDate'])
 
     # Read prediction csv
-    prediction_df = pd.read_csv('online_retail/online_retail_3month_predictions.csv')
-    # Convert to valid data types
-    prediction_df['InvoiceDate'] = pd.to_datetime(prediction_df['InvoiceDate'])
-    # Group by InvoiceDate and sum all columns starting with 'Predicted_Sales'
-    columns_to_sum = [col for col in prediction_df.columns if col.startswith('Predicted_Sales')]
-    grouped_df = prediction_df.groupby('InvoiceDate')[columns_to_sum].sum().reset_index()
-
-    # Rename columns for clarity
-    grouped_df = grouped_df.rename(columns={col: f'Total_{col}' for col in columns_to_sum})
+    prediction_df = pd.read_csv('online_retail/online_retail_pivoted_perday_3month_predictions.csv')
 
     # Ensure both DataFrames are sorted by InvoiceDate
-    grouped_df = grouped_df.sort_values('InvoiceDate')
+    prediction_df = prediction_df.sort_values('InvoiceDate')
     actual_sales_df = actual_sales_df.sort_values('InvoiceDate')
 
     # Merge the DataFrames on InvoiceDate
