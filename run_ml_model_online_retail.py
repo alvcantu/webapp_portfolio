@@ -45,10 +45,6 @@ def main():
         run_command('python online_retail/etl_mlmodel_online_retail.py')
         print("etl_mlmodel script completed.")
 
-        # If the second script succeeds, run the third script
-        print("Starting etl_mlmodel script...")
-        run_command('python online_retail/predictions_mlmodel_online_retail.py')
-        print("predictions_mlmodel script completed.")
 
         # Send success email
         send_email("Scripts Execution Completed", "Both scripts have run successfully.", to_email)
