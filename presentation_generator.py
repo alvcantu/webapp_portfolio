@@ -19,6 +19,13 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.enums import TA_RIGHT
+import sendgrid
+from sendgrid.helpers.mail import Mail, Email, To, Content
+
+# SendGrid API Keys and emails
+SENDGRID_API_KEY = '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'
+SENDER_EMAIL = 'alvcantu@icloud.com'
+RECIPIENT_EMAIL = 'alvcantu@icloud.com'
 
 # Open Router API key used to connect to different LLM's
 OPENROUTER_API_KEY = "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"
@@ -468,8 +475,38 @@ def create_slides():
     # Close the database connection
     conn.close()
 
-# Call the function to create the graphs in png format to be later inserted into slides
-create_stock_graphs()
+# Send error messages function
+def send_error_email(error_message):
+    sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
+    from_email = Email(SENDER_EMAIL)
+    to_email = To(RECIPIENT_EMAIL)
+    subject = "Script Execution Error"
+    content = Content("text/plain", f"An error occurred:\n{error_message}")
+    mail = Mail(from_email, to_email, subject, content)
+    
+    try:
+        response = sg.client.mail.send.post(request_body=mail.get())
+        print(f"Email sent, status code: {response.status_code}")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
 
-# Call the function to create the weekly presentation
-create_slides()
+
+# Execute the main logic with try-except blocks to handle exceptions and send error emails
+# EMAILS DO NOT SEND IF MODULE FAILS TO LOAD, ONLY IF FUNCTION FAILS
+try:
+    # Call the function to create the graphs in png format to be later inserted into slides
+    create_stock_graphs()
+except Exception as e:
+    error_message = f"Failed to create stock graphs: {str(e)}"
+    send_error_email(error_message)
+    raise  # Re-raise the exception if you want the script to stop here
+
+try:
+    # Call the function to create the weekly presentation
+    create_slides()
+except Exception as e:
+    error_message = f"Failed to create slides: {str(e)}"
+    send_error_email(error_message)
+    raise  # Re-raise the exception if you want the script to stop here
+
+print("All operations completed successfully.")
