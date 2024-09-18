@@ -401,13 +401,14 @@ def dash_ml_models_online_retail():
         return ' UNION ALL '.join(sql_parts) + ';'
 
     # Define metrics
-    metrics = ['RMSE', 'MSE', 'MAE', 'MAPE']
+    metrics = ['RMSE', 'MSE', 'MAE', 'MAPE','AVG % difference from actual']
     selected_performance_measure = request.args.get('performance_measure', metrics[0])
     dynamic_sqls = {
         'RMSE': 'ROUND(SQRT(AVG(POWER((Quantity * UnitPrice) - {col}, 2))), 2)',
         'MSE': 'ROUND(SUM(POW((UnitPrice * Quantity) - {col}, 2)) / COUNT(*), 2)',
         'MAE': 'ROUND(AVG(ABS((UnitPrice * Quantity) - {col})), 2)',
-        'MAPE': 'ROUND((SUM(ABS((Quantity * UnitPrice) - {col}) / NULLIF(Quantity * UnitPrice, 0)) / COUNT(*)) * 100, 2)'
+        'MAPE': 'ROUND((SUM(ABS((Quantity * UnitPrice) - {col}) / NULLIF(Quantity * UnitPrice, 0)) / COUNT(*)) * 100, 2)',
+        'AVG % difference from actual': 'ROUND(AVG(ABS(({col} - (Quantity * UnitPrice)) / (Quantity * UnitPrice)) * 100),2)'
     }
 
     # Execute queries
@@ -682,7 +683,12 @@ def documentation():
         'dash_stocks': '/home/alvcantu/mysite/templates/dash_stocks.html',
         # Online retail files
         'etl_online_retail': '/home/alvcantu/online_retail/etl_online_retail.py',
-        'create_mlmodel_online_retail': '/home/alvcantu/online_retail/create_mlmodel_online_retail.py'
+        'transactions_mlmodel_online_retail': '/home/alvcantu/online_retail/transactions_mlmodel_online_retail.py',
+        'predictions_mlmodel_online_retail': '/home/alvcantu/online_retail/predictions_mlmodel_online_retail.py',
+        'attempt_1_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt_1_create_mlmodel_online_retail.py',
+        'attempt_1_etl_online_retail': '/home/alvcantu/online_retail/attempt_1_etl_online_retail.py',
+        'attempt_2_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt_2_create_mlmodel_online_retail.py',
+        'attempt_2_etl_online_retail': '/home/alvcantu/online_retail/attempt_2_etl_online_retail.py'
     }
 
     replacements = [
