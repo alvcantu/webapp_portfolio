@@ -443,7 +443,7 @@ select option {
 .accordion {
   max-width: 80%;
   border-radius: 5px;
-  background-color: #3e8e41;
+  background-color: #4CAF50;
   color: white;
   cursor: pointer;
   padding: 18px;
@@ -456,7 +456,7 @@ select option {
   margin-bottom: 5px; /* Add margin to create spacing between accordions */
 }
 .accordion.active, .accordion:hover {
-  background-color: #49714b;
+  background-color: #45a049d7;
 }
 
 .panel {

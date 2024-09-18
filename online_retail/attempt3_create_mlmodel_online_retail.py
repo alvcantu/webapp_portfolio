@@ -8,8 +8,8 @@ import xgboost as xgb
 from datetime import datetime
 from bayes_opt import BayesianOptimization
 from sklearn.model_selection import TimeSeriesSplit
+import holidays
 
-# Assuming the database connection function remains unchanged
 # Connect to MySQL database
 def get_db_connection():
     mydb = mysql.connector.connect(
@@ -47,10 +47,44 @@ JOIN
 
 df = execute_query(query)
 
+# Load the CSV with country to holiday_code mapping
+country_code_df = pd.read_csv('online_retail/country_mapping_online_retail.csv')
+# Merge the dataframes to get the holiday_code, 
+# Mapping assumes all not available countires in holidays as part of Great Britain given its a UK online ratailer
+df = pd.merge(df, country_code_df, on='Country', how='left')
+
+print(df.columns)
+# Function to check if it's a holiday
+def is_holiday(row):
+    country_code = row['holiday_code']
+    invoice_date = row['InvoiceDate'].date()  # Get the date part
+    
+    # Create the holiday calendar for the specified country
+    try:
+        country_holidays = holidays.CountryHoliday(country_code)
+        return True in country_holidays  # Check if the date is a holiday
+    except KeyError:
+        return False  # If the country code is not supported by the holidays library
+
+
+# Function to categorize StockCode
+def categorize_stockcode(code):
+    if code == 'AMAZONFEE' or code == 'BANK CHARGES':
+        return 'Fees or bank charges'
+    elif code.startswith('DCGSS'):
+        return 'party bags'
+    elif code.startswith('gift'):
+        return 'gift'
+    elif code == 'DOT' or code == 'POST':
+        return 'Postage costs'
+    else:
+        return 'Not-classified'
+
+
 # Convert to valid data types
 df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'])
 
-# Feature Engineering
+# Feature Engineering of InvoiceDate
 df['Year'] = df['InvoiceDate'].dt.year
 df['Month'] = df['InvoiceDate'].dt.month
 df['Day'] = df['InvoiceDate'].dt.day
@@ -60,6 +94,18 @@ df['Quarter'] = df['InvoiceDate'].dt.quarter
 df['Season'] = df['Month'].apply(lambda x: 'Winter' if x in [12, 1, 2] else 
                                          'Spring' if x in [3, 4, 5] else 
                                          'Summer' if x in [6, 7, 8] else 'Autumn')
+df['WeekOfMonth'] = df['InvoiceDate'].apply(lambda x: (x.day - 1) // 7 + 1)                                         
+# Assuming your fiscal year starts in July
+df['FiscalQuarter'] = df['Month'].apply(lambda x: (x - 7) % 12 // 3 + 1)
+df['FiscalYear'] = df['Year'] + df['Month'].apply(lambda x: 1 if x >= 7 else 0)
+# Apply the function to create the 'IsHoliday' column
+df['holiday_code'] = df['holiday_code'].astype(str)
+df['IsHoliday'] = df.apply(is_holiday, axis=1)
+
+# Additional feature engineering
+# Categoize StockCodes
+df['StockCodeCategory'] = df['StockCode'].apply(categorize_stockcode)
+df['StockCodeLength'] = df['StockCode'].str.len()
 
 # Encode categorical variables
 le = LabelEncoder()
@@ -67,9 +113,12 @@ df['CustomerID'] = le.fit_transform(df['CustomerID'].astype(str))
 df['StockCode'] = le.fit_transform(df['StockCode'].astype(str))
 df['Country'] = le.fit_transform(df['Country'])
 df['Season'] = le.fit_transform(df['Season'])
+df['Description'] = le.fit_transform(df['Description'])
+df['StockCodeCategory'] = le.fit_transform(df['StockCodeCategory'])
+df['continent'] = le.fit_transform(df['continent'])
 
 # Assuming 'Sales' is our target variable
-X = df[['CustomerID', 'StockCode', 'Year', 'Month', 'Day', 'DayOfWeek', 'IsWeekend', 'Quarter', 'Season', 'Country']]
+X = df[['CustomerID', 'StockCode', 'Country', 'Description', 'StockCodeCategory', 'continent', 'Year', 'Month', 'Day', 'DayOfWeek', 'IsWeekend', 'Quarter', 'Season', 'WeekOfMonth', 'FiscalQuarter', 'FiscalYear', 'IsHoliday', 'StockCodeLength']]
 y = df['Sales']
 
 # Time-based split, 70% for training, 30% for testing
@@ -116,7 +165,7 @@ xgbBO = BayesianOptimization(
 )
 
 # Perform the optimization
-xgbBO.maximize(init_points=5, n_iter=25)
+xgbBO.maximize(init_points=5, n_iter=75)
 
 # Get the best parameters
 best_params = xgbBO.max['params']
@@ -140,4 +189,4 @@ print(f"R-squared Score: {r2}")
 print(best_model.get_booster().get_score(importance_type='gain'))
 
 # Save the best model
-best_model.save_model('online_retail/attempt2_xgboost_mlmodel_online_retail.json')
+best_model.save_model('online_retail/attempt3_xgboost_mlmodel_online_retail.json')

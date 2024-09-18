@@ -464,6 +464,10 @@ def dash_ml_models_online_retail():
     merged_df = merged_df[columns_order]
     # Replace NaN values with None (null in JSON)
     merged_df = merged_df.replace({np.nan: None})
+    # Convert 'InvoiceDate' to a valid datetime object
+    merged_df['InvoiceDate'] = pd.to_datetime(merged_df['InvoiceDate'])
+    # Format it to ISO 8601 (YYYY-MM-DDTHH:mm:ssZ)
+    merged_df['InvoiceDate'] = merged_df['InvoiceDate'].dt.strftime('%Y-%m-%d')
     # Convert to dictionary for JSON serialization
     sales_data = merged_df.to_dict('records')
 
@@ -688,7 +692,9 @@ def documentation():
         'attempt_1_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt_1_create_mlmodel_online_retail.py',
         'attempt_1_etl_online_retail': '/home/alvcantu/online_retail/attempt_1_etl_online_retail.py',
         'attempt_2_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt_2_create_mlmodel_online_retail.py',
-        'attempt_2_etl_online_retail': '/home/alvcantu/online_retail/attempt_2_etl_online_retail.py'
+        'attempt_2_etl_online_retail': '/home/alvcantu/online_retail/attempt_2_etl_online_retail.py',
+        'attempt_3_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt3_create_mlmodel_online_retail.py',
+        'attempt_3_etl_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt3_etl_mlmodel_online_retail.py'
     }
 
     replacements = [

@@ -1,0 +1,39 @@
+Country,holiday_code,continent
+United Kingdom,GB,Europe
+France,FR,Europe
+Australia,AU,Oceania
+Netherlands,NL,Europe
+Germany,DE,Europe
+Norway,NO,Europe
+EIRE,IE,Europe
+Switzerland,CH,Europe
+Spain,ES,Europe
+Poland,PL,Europe
+Portugal,PT,Europe
+Italy,IT,Europe
+Belgium,BE,Europe
+Lithuania,LT,Europe
+Japan,JP,Asia
+Iceland,IS,Europe
+Channel Islands,GB,Europe
+Denmark,DK,Europe
+Cyprus,CY,Europe
+Sweden,SE,Europe
+Finland,FI,Europe
+Austria,AT,Europe
+Bahrain,BH,Asia
+Israel,IL,Asia
+Greece,GR,Europe
+Hong Kong,HK,Asia
+Singapore,SG,Asia
+Lebanon,GB,Asia
+United Arab Emirates,AE,Asia
+Saudi Arabia,SA,Asia
+Czech Republic,CZ,Europe
+Canada,CA,North America
+Unspecified,GB,Unknown
+Brazil,BR,South America
+USA,US,North America
+European Community,GB,Europe
+Malta,MT,Europe
+RSA,ZA,Africa
