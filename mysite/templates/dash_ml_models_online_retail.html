@@ -52,7 +52,7 @@
   <h2>Predicting sales for an online retail business using historical transaction data with XGBoost machine learning regression algorithm.</h2>
 
   <h3>Select a model to view its description and my approach to the problem.</h3>
-  <h4 style="width: 80%;">I chose XGBoost for all models because of its high performance and focus on improving performance by changing the feature engineering rather than the model. The algorithm works by building decision trees (i.e. a series of questions that lead to the optimal prediction by reducing the difference between actual values and predicted values, or the residuals) sequentially. Testing the performance on one and then based off the reduced residuals creating an improved one, 'gradient boosting' in fancy terminology. But given XGBoost is EXTREME gradient boosting, it calculates its trees in a unique way by figuring out where is best to split the data. In the case of InvoiceDate, it smartly determines whether 'Is the day before or after Thursday?' OR 'Is the day before or after FRIDAY?' is a better question for reducing the residual by testing each of these scenarios out. It’s like a team of weak students, each correcting the mistakes of the previous one, gradually improving their collective score to become top performers, each 'student' here being a decision tree. Eventually after many different combinations it picks the most helpful questions that reduces the residuals the most, hence leading to the most accurate prediction.</h4>
+  <h4 style="width: 80%;">I chose XGBoost for all models because of its high performance and focus on improving performance by changing the feature engineering rather than the model. The algorithm works by building decision trees (i.e. a series of questions that lead to the optimal prediction by reducing the difference between actual values and predicted values, or the residuals) sequentially. Testing the performance on one and then based off the reduced residuals creating an improved one, 'gradient boosting' in fancy terminology. But given XGBoost is EXTREME gradient boosting, it calculates its trees in a unique way by figuring out where is best to split the data. In the case of InvoiceDate, it smartly determines whether 'Is the day before or after Thursday?' OR 'Is the day before or after FRIDAY?' is a better question for reducing the residual by testing each of these scenarios out. It’s like a team of weak students, each correcting the mistakes of the previous one, gradually improving their collective score to become top performers, each 'student' here being a decision tree. Eventually after many different combinations it picks the most helpful questions that reduces the residuals the most by minimising the Root Mean Square Errors or RMSE (a measure showing the average magnitude of errors). Hence leading to the most accurate prediction.</h4>
   <!--Transactions model-->
   <button class="accordion">Predicting transactions per day</button>
   <div class="panel">
@@ -61,17 +61,17 @@
   <!--First sales model-->
   <button class="accordion">Predicted_Sales1</button>
   <div class="panel">
-    <p>The first model to predict sales I built using XGBoost and RandomizedSearchCV: This model was trained on the entire dataset. I made the mistake of including the Quantity and UnitPrice features in my model, which directly calculate sales. This made the model too good at predicting training data but poor at generalizing to new data, a problem known as overfitting. I only included Year, Month and Day as date features, in retrospect I could've added many more features from the InvoiceDate column. To ensure my model could handle changes over time, like seasonal trends, I split my data in a way that respects time order. I used a technique called TimeSeriesSplit, which cross validates the results so a sample of data gets tested with training data. I chose 3 splits as its rule of thumb to use 3-5. The model minimises the Root Mean Square Errors or RMSE (see first chart), a formula meant to show the residuals from all values. In order to find the best settings for my model I used RandomizedSearchCV technique. It works by choosing different random combination of settings for the model and tests the results against one another, eventually the best one is chosen. Think of it like trying on different clothing outfits to see which one fits best when you look in the mirror, but instead of outfits, we're trying different model settings, and we do this multiple times to ensure we find a good match. I did 30 different rounds of 30 different outfits. The model proved worthy when looking at performance metrics but useless when applying it to new data because of the previously mentioned mistake.</p>
+    <p>The first model to predict sales I built using XGBoost and RandomizedSearchCV: This model was trained on the entire dataset. I made the mistake of including the exact quantities sold and prices in my model, which directly calculate sales. This made the model too good at predicting training data but poor at generalizing to new data, a problem known as overfitting. I only included Year, Month and Day as date features, in retrospect I could’ve added many more features from the InvoiceDate column. To ensure my model could handle changes over time, like seasonal trends, I split my data in a way that respects time order. I used a technique called TimeSeriesSplit, which cross validates the results so a sample of data gets tested with training data. I chose 3 splits as its rule of thumb to use 3-5. In order to find the best settings for my model I used RandomizedSearchCV technique. It works by choosing different random combination of settings for the model and tests the results against one another, eventually the best one is chosen. Think of it like trying on different clothing outfits to see which one fits best when you look in the mirror, but instead of outfits, we're trying different model settings, and we do this multiple times to ensure we find a good match. I did 30 different rounds of 30 different outfits. The model proved worthy when looking at performance metrics but useless when applying it to new data because of the previously mentioned mistake.</p>  
   </div>
   <!--Second sales model-->
   <button class="accordion">Predicted_Sales2</button>
   <div class="panel">
-    <p>The second model to predict sales is also built using XGBoost but the settings are chosen with a Bayesian Optimization technique instead. Unlike the first, I did not include deterministic features like Quantity and UnitPrice. I expanded the features based on InvoiceDate so now the model is trained on Quarters and Season which can help with yearly sales fluctuations. Like the first, I also used TimeSeriesSplit with 3 rounds of splits and minimised the Root Mean Squared Error or RMSE. I used Bayesian Optimization as, unlike RandomizedSearchCV technique, it learns from its mistakes. The performance metrics suggest this model is worse that the first one, but given this was not trained on deterministic features that is expected. When applying to future the data there seem to be less fluctuation is sales as compared to actual, which suggest this model is not very good at estimating days of high or low sales. Suggesting additional features need to be added.</p>
+    <p>The second model to predict sales is also built using XGBoost but the settings are chosen with a Bayesian Optimization technique instead. Unlike the first, I did not include deterministic features like Quantity and UnitPrice. I expanded the features based on InvoiceDate so now the model is trained on Quarters and Season which can help with yearly sales fluctuations. Like the first, I also used TimeSeriesSplit with 3 rounds of splits. I used Bayesian Optimization as, unlike RandomizedSearchCV technique, it learns from its mistakes. The performance metrics suggest this model is worse that the first one, but given this was not trained on deterministic features that is expected. When applying to future the data there seem to be less fluctuation is sales as compared to actual, which suggest this model is not very good at estimating days of high or low sales. Suggesting additional features need to be added.</p>
   </div>
   <!--Third sales model-->
-  <button class="accordion"> WIP Predicted_Sales3</button>
+  <button class="accordion">Predicted_Sales3</button>
   <div class="panel">
-    <p>The third model adds new features to the model training such as: "IsHoliday", which determines a date's holiday by its associated country. "Continent" from Country column. "Description" of the item being transacted. Fiscal dates associated from the InvoiceDate feature. Categorzes StockCode's such as those that are fees like 'AMAZONFEE' or 'BANK CHARGES', those that are gift cards (assumption) that start with 'gift', those are postage 'POST' or 'DOT', and those 'party bags' goods that start with 'DCGSS'. Also classify the StockCode's according to their length. Given its high performance last time i stuck with Bayesian Optimization but incremented the number of iterations it tests different settings for the model from 25 to 75.</p>
+    <p>The third model adds new features to the model training such as: "IsHoliday", which determines if an invoice date is holiday by its associated country. "Continent" from Country column. "Description" of the item being transacted. Fiscal dates associated from the invoice date. Categorises StockCode's such as those that are fees like 'AMAZONFEE' or 'BANK CHARGES', those that are gift cards that start with 'gift', those are postage 'POST' or 'DOT', and those 'party bags that start with 'DCGSS'. Also classify the StockCode's according to their length. Given its high performance last time, I stuck with Bayesian Optimization but incremented the number of iterations (how many settings it tests)for the model from 25 to 75. Performance metrics are mostly the same as the second model with the exception of Mean Absolute Percentage Error or MAPE and the average % difference between actual and predicted values, suggesting the model is better at handling outliers such as returns or very high sales dates. When applying the model to future data, the results are lower than the second but also less dispersed.</p>
   </div>
 
 
@@ -200,20 +200,22 @@
             fill: false,
         });
 
-        // Dynamically add all Total Predicted Sales columns to the datasets
-        // Function to generate lighter red color for each predicted sales line
-        function getRandomRedColor(i, maxPredictions) {
-            // The red component increases as i increases, making the color lighter
-            const minRed = 128 + Math.floor((i / maxPredictions) * 127); // Minimum red starts from 128 and increases
-            const r = minRed + Math.floor(Math.random() * (255 - minRed)); // Random value above minRed
+        // Function to generate distinct red colors for each predicted sales line
+        function getDistinctRedColor(i, maxPredictions) {
+            // Increase red value more linearly based on the index, with more contrast between steps
+            const redStep = Math.floor((i / maxPredictions) * 155) + 100; // Start from 100, ensuring it doesn't get too light
+            const r = Math.min(redStep, 255); // Cap red at 255 to avoid overflow
 
-            // Green and Blue decrease in potential max value as i increases to ensure red dominance
-            const maxGreenBlue = 128 - Math.floor((i / maxPredictions) * 64); // Max value for G&B decreases
+            // Decrease the range of green and blue values more drastically to emphasize the red
+            const greenBlueStep = Math.floor((i / maxPredictions) * 75); // Step for green and blue
+            const maxGreenBlue = 50 + greenBlueStep; // Ensure green and blue don't go above 125
             const g = Math.floor(Math.random() * maxGreenBlue);
             const b = Math.floor(Math.random() * maxGreenBlue);
 
             return `rgba(${r}, ${g}, ${b}, 1)`;
         }
+
+        // Dynamically add all Total Predicted Sales columns to the datasets
         // Assuming maxPredictions is known or can be calculated from the data structure
         const maxPredictions = Object.keys(salesData[0]).filter(key => key.startsWith('Total_Predicted_Sales')).length;
 
@@ -221,7 +223,7 @@
             datasets.push({
                 label: `Predicted_Sales${i}`,
                 data: salesData.map(entry => entry[`Total_Predicted_Sales${i}`] !== null ? parseFloat(entry[`Total_Predicted_Sales${i}`]) : null),
-                borderColor: getRandomRedColor(i, maxPredictions), // Color gets lighter as i increases
+                borderColor: getDistinctRedColor(i, maxPredictions), // Color gets lighter as i increases
                 fill: false,
                 hidden: i==1 ? true : false // Crossed out the Total Predicted Sales 1 since it has mistake
             });
