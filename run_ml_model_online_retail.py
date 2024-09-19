@@ -33,7 +33,7 @@ def main():
     try:
         # Run the first script
         print("Starting create_mlmodel script...")
-        run_command('python online_retail/attempt3_create_mlmodel_online_retail.py')
+        run_command('python online_retail/attempt4_create_mlmodel_online_retail.py')
         print("create_mlmodel script completed.")
 
         # Wait for 30 seconds
@@ -42,7 +42,7 @@ def main():
 
         # If the first script succeeds, run the second script
         print("Starting etl_mlmodel script...")
-        run_command('python online_retail/attempt3_etl_mlmodel_online_retail.py')
+        run_command('python online_retail/attempt4_etl_mlmodel_online_retail.py')
         print("etl_mlmodel script completed.")
 
 

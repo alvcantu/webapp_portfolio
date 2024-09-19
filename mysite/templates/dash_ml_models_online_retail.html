@@ -73,7 +73,11 @@
   <div class="panel">
     <p>The third model adds new features to the model training such as: "IsHoliday", which determines if an invoice date is holiday by its associated country. "Continent" from Country column. "Description" of the item being transacted. Fiscal dates associated from the invoice date. Categorises StockCode's such as those that are fees like 'AMAZONFEE' or 'BANK CHARGES', those that are gift cards that start with 'gift', those are postage 'POST' or 'DOT', and those 'party bags that start with 'DCGSS'. Also classify the StockCode's according to their length. Given its high performance last time, I stuck with Bayesian Optimization but incremented the number of iterations (how many settings it tests)for the model from 25 to 75. Performance metrics are mostly the same as the second model with the exception of Mean Absolute Percentage Error or MAPE and the average % difference between actual and predicted values, suggesting the model is better at handling outliers such as returns or very high sales dates. When applying the model to future data, the results are lower than the second but also less dispersed.</p>
   </div>
-
+   <!--Fourth sales model-->
+  <button class="accordion">(WIP) Predicted_Sales4</button>
+  <div class="panel">
+    <p>Given the third model demonstrated that it is possible to reduce MAPE by a significant amount and given MAPE measures the differences between actual and predicted in relative terms rather than absolute, for the fourth model I decided to use MAPE as a loss function (I.e. minimise it rather than RMSE. In retrospect minimising this measure is more appropriate given sales amount can vary by a lot from transaction to transaction, so having accurate predictions in % or relative terms is more important. I stuck with the same features as the third and same # of iterations of Bayesian Optimization at choosing ideal settings.</p>
+  </div>
 
   <!-- Filter form -->
   <form id="filterForm" onchange="this.submit()">
