@@ -11,8 +11,10 @@ def get_stock_info(ticker):
     # Manually adjust ticker symbols as needed
     if ticker == '2222':
         ticker = '2222.SR'
-    elif ticker == 'BRK.A':
+    if ticker == 'BRK.A':
         ticker = 'BRK-A'
+    elif ticker == '857':
+        ticker = '0857.HK'
     
     # Extract stock information
     stock = yf.Ticker(ticker)

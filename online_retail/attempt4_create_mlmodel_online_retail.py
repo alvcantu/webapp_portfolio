@@ -1,6 +1,6 @@
 import pandas as pd
 import mysql.connector
-from sklearn.metrics import mean_absolute_percentage_error r2_score
+from sklearn.metrics import mean_absolute_percentage_error, r2_score
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
