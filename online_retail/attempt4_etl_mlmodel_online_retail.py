@@ -195,7 +195,7 @@ future_df_pivoted = pd.pivot_table(future_df_og,
 future_df_pivoted_perday = future_df_pivoted_perday.sort_index()
 future_df_pivoted = future_df_pivoted.sort_index()
 # Drop level 0 column from pivoted DataFrame
-future_df_pivoted_perday.drop(columns=['level_0'], inplace=True)
+#future_df_pivoted_perday.drop(columns=['level_0'], inplace=True)
 future_df_pivoted.reset_index(inplace=True)
 # Insert Predicted_Sales1 column into the pivoted DataFrame
 future_df_pivoted_perday['Total_Predicted_Sales4'] = future_df_pivoted['Predicted_Sales4']

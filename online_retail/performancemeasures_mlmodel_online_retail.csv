@@ -1,0 +1,21 @@
+column_name,performance_metric,value
+Predicted_Sales1,RMSE,333.85
+Predicted_Sales2,RMSE,378.92
+Predicted_Sales3,RMSE,379.04
+Predicted_Sales4,RMSE,376.21
+Predicted_Sales1,MSE,111456.05
+Predicted_Sales2,MSE,143581.55
+Predicted_Sales3,MSE,143672.37
+Predicted_Sales4,MSE,141535.82
+Predicted_Sales1,MAE,11.37
+Predicted_Sales2,MAE,16.75
+Predicted_Sales3,MAE,17.17
+Predicted_Sales4,MAE,16.54
+Predicted_Sales1,MAPE,103.34
+Predicted_Sales2,MAPE,169.88
+Predicted_Sales3,MAPE,127.88
+Predicted_Sales4,MAPE,102.97
+Predicted_Sales1,AVG % difference from actual,111.06
+Predicted_Sales2,AVG % difference from actual,186.85
+Predicted_Sales3,AVG % difference from actual,140.18
+Predicted_Sales4,AVG % difference from actual,115.35

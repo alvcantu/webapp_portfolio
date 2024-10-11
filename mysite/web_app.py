@@ -43,7 +43,7 @@ def is_read_only_query(sql_query):
 
     return True, None
 
-# Prepare data for Chart.js
+# Prepare data for Chart.js (NEEDS FULL REWRITE)
 def prepare_data_for_chart(sql_query):
     # Connect to MySQL database
     mydb, cursor = get_db_connection()
@@ -226,10 +226,10 @@ def extract_sql_query(text):
     pattern = r'(?i)(WITH\s+.*?AS\s+\(.*?\)\s*(?=(SELECT|INSERT INTO|UPDATE|DELETE FROM|CREATE TABLE|ALTER TABLE|DROP TABLE|TRUNCATE TABLE|GRANT|REVOKE|COMMIT|ROLLBACK|SAVEPOINT|SET TRANSACTION|MERGE))|SELECT|INSERT INTO|UPDATE|DELETE FROM|CREATE TABLE|ALTER TABLE|DROP TABLE|TRUNCATE TABLE|GRANT|REVOKE|COMMIT|ROLLBACK|SAVEPOINT|SET TRANSACTION|MERGE).*?;'
     # Search for the pattern in the text
     match = re.search(pattern, text, re.DOTALL)
-    # If a match is found, return the matched string, otherwise return None
+    # If a match is found, return the matched string, otherwise return error message
     if match:
         return match.group(0)
-    return None
+    return "SQL query could not be generated. Please try again."
 
 # To get html table from a SQL query, executes to DB, transforms to dataframe, then to html.
 def get_table_html(sql_query):
@@ -340,7 +340,7 @@ def dash_self_service():
         data = {
             "model": "openrouter/auto",  # You can change this to another model if needed
             "messages": [
-                {"role": "system", "content": "You are a MySQL server version 8.0.35 query generator that outputs code ready to executed. Do not join tables without relationhips present in the schema."},
+                {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to executed. Do not join tables without relationhips present in the schema."},
                 {"role": "user", "content": prompt}
             ]
         }
@@ -351,8 +351,11 @@ def dash_self_service():
         # Extract only the query from the sql query response
         sql_query = extract_sql_query(sql_query_unclean)
         # Add limit to the query to prevent data from being too large
-        if 'LIMIT' not in sql_query.upper():
-            sql_query = sql_query.rstrip(';') + ' LIMIT 6900;'
+        if 'Please try again' not in sql_query:
+            if 'LIMIT' not in sql_query.upper():
+                sql_query = sql_query.rstrip(';') + ' LIMIT 6900;'
+        else:
+            sql_query = sql_query.rstrip(';')
 
         if selected_visual == 'Table':
             # Prepare data for DataTable, get_table_html function already checks if the query is read-only
@@ -373,49 +376,15 @@ def dash_ml_models_online_retail():
     # Connect to MySQL database
     mydb, cursor = get_db_connection()
 
-    # Back-end for first chart.js showing performance per model, performance_data is pushed to front-end
-    # SQL query that returns all column names for all models
-    column_names_sql = '''
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'ONR_FactTransactions'
-        AND column_name LIKE 'Predicted_Sales%';
-        '''
-    # Fetch column names
-    cursor.execute(column_names_sql)
-    #column_names = [row['COLUMN_NAME'] for row in cursor.fetchall()]
-    column_names = [row[0] for row in cursor.fetchall()]
-
-    # Function to generate SQL for each metric
-    def generate_sql(metric, column_names):
-        sql_parts = []
-        for col in column_names:
-            sql_parts.append(f'''
-                SELECT '{col}' AS prediction_type, '{metric}' AS metric ,{dynamic_sqls[metric].format(col=col)} AS value
-                FROM ONR_FactTransactions
-            ''')
-        # Ensure there's at least one part
-        if not sql_parts:
-            return ""
-        # Join with UNION ALL between all parts except the last one
-        return ' UNION ALL '.join(sql_parts) + ';'
-
     # Define metrics
     metrics = ['RMSE', 'MSE', 'MAE', 'MAPE','AVG % difference from actual']
     selected_performance_measure = request.args.get('performance_measure', metrics[0])
-    dynamic_sqls = {
-        'RMSE': 'ROUND(SQRT(AVG(POWER((Quantity * UnitPrice) - {col}, 2))), 2)',
-        'MSE': 'ROUND(SUM(POW((UnitPrice * Quantity) - {col}, 2)) / COUNT(*), 2)',
-        'MAE': 'ROUND(AVG(ABS((UnitPrice * Quantity) - {col})), 2)',
-        'MAPE': 'ROUND((SUM(ABS((Quantity * UnitPrice) - {col}) / NULLIF(Quantity * UnitPrice, 0)) / COUNT(*)) * 100, 2)',
-        'AVG % difference from actual': 'ROUND(AVG(ABS(({col} - (Quantity * UnitPrice)) / (Quantity * UnitPrice)) * 100),2)'
-    }
-
-    # Execute queries
-    sql = generate_sql(selected_performance_measure, column_names)
-    cursor.execute(sql)
-    performance_data = cursor.fetchall()
-
+    # Read performance data from CSV
+    performance_data = pd.read_csv('online_retail/performancemeasures_mlmodel_online_retail.csv')
+    # Filter csv by selected performance measure
+    performance_data = performance_data[performance_data.iloc[:, 1] == selected_performance_measure]
+    # Convert performance_data to list of tuples
+    performance_data = list(performance_data.itertuples(index=False, name=None))
 
     # Back-end for second chart.js showing actual and predicted sales per day, sales_data is pushed to front-end
     # Query to extract total sales per day
@@ -689,12 +658,14 @@ def documentation():
         'etl_online_retail': '/home/alvcantu/online_retail/etl_online_retail.py',
         'transactions_mlmodel_online_retail': '/home/alvcantu/online_retail/transactions_mlmodel_online_retail.py',
         'predictions_mlmodel_online_retail': '/home/alvcantu/online_retail/predictions_mlmodel_online_retail.py',
-        'attempt_1_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt_1_create_mlmodel_online_retail.py',
-        'attempt_1_etl_online_retail': '/home/alvcantu/online_retail/attempt_1_etl_online_retail.py',
-        'attempt_2_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt_2_create_mlmodel_online_retail.py',
-        'attempt_2_etl_online_retail': '/home/alvcantu/online_retail/attempt_2_etl_online_retail.py',
-        'attempt_3_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt3_create_mlmodel_online_retail.py',
-        'attempt_3_etl_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt3_etl_mlmodel_online_retail.py'
+        'attempt1_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt1_create_mlmodel_online_retail.py',
+        'attempt1_etl_online_retail': '/home/alvcantu/online_retail/attempt1_etl_online_retail.py',
+        'attempt2_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt2_create_mlmodel_online_retail.py',
+        'attempt2_etl_online_retail': '/home/alvcantu/online_retail/attempt2_etl_online_retail.py',
+        'attempt3_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt3_create_mlmodel_online_retail.py',
+        'attempt3_etl_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt3_etl_mlmodel_online_retail.py',
+        'attempt4_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt4_create_mlmodel_online_retail.py',
+        'attempt4_etl_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt4_etl_mlmodel_online_retail.py',
     }
 
     replacements = [
@@ -723,8 +694,6 @@ def documentation():
 @app.route('/')
 def index():
     return render_template('index.html')
-
-    render_template('test.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,99 +1,13 @@
-# # test
-import pandas as pd
+import csv
+import requests
+import json
 import mysql.connector
+from mysql.connector import Error
+import pandas as pd
 import numpy as np
-
-# # Extract total sales per day from prediction csv
-# # Read prediction csv
-# prediction_df = pd.read_csv('online_retail/online_retail_3month_predictions.csv')
-# # Convert to valid data types
-# prediction_df['InvoiceDate'] = pd.to_datetime(prediction_df['InvoiceDate'])
-# # Group by InvoiceDate and sum all columns starting with 'Predicted_Sales'
-# columns_to_sum = [col for col in prediction_df.columns if col.startswith('Predicted_Sales')]
-# grouped_df = prediction_df.groupby('InvoiceDate')[columns_to_sum].sum().reset_index()
-
-# # Rename columns for clarity
-# grouped_df = grouped_df.rename(columns={col: f'Total_{col}' for col in columns_to_sum})
-
-# # Connect to MySQL database
-# def get_db_connection():
-#     mydb = mysql.connector.connect(
-#         host="alvcantu.mysql.pythonanywhere-services.com",
-#         user="alvcantu",
-#         password="h63Efp09-d",
-#         database="alvcantu$default"
-#     )
-#     cursor = mydb.cursor()
-#     return mydb, cursor
-
-# # Connect to MySQL database
-# mydb, cursor = get_db_connection()
-
-# # Query to extract total sales per day
-# sales_per_day_sql = '''
-#     SELECT
-#         DATE(InvoiceDate) AS InvoiceDate,
-#         SUM(Quantity * UnitPrice) AS Total_Actual_Sales
-#     FROM
-#         ONR_DimInvoice AS inv
-#     JOIN
-#         ONR_FactTransactions AS trans ON inv.InvoiceID = trans.InvoiceID
-#     GROUP BY
-#         DATE(InvoiceDate)
-#     ORDER BY
-#         Total_Actual_Sales
-#     '''
-
-# cursor.execute(sales_per_day_sql)
-# actual_sales_per_day = cursor.fetchall()
-
-# # Convert SQL query result to DataFrame
-# actual_sales_df = pd.DataFrame(actual_sales_per_day, columns=['InvoiceDate', 'Total_Actual_Sales'])
-# actual_sales_df['InvoiceDate'] = pd.to_datetime(actual_sales_df['InvoiceDate'])
-
-# # Ensure both DataFrames are sorted by InvoiceDate
-# grouped_df = grouped_df.sort_values('InvoiceDate')
-# actual_sales_df = actual_sales_df.sort_values('InvoiceDate')
-
-# # Merge the DataFrames on InvoiceDate
-# # We'll use merge instead of concat to handle potential date mismatches
-# merged_df = pd.merge(
-#     actual_sales_df,
-#     grouped_df,
-#     on='InvoiceDate',
-#     how='outer'  # Use 'outer' if you want to keep all dates from both DataFrames
-# )
-
-# # Reorder columns to have InvoiceDate first, then Total_Actual_Sales, followed by Total_Predicted_Sales columns
-# columns_order = ['InvoiceDate', 'Total_Actual_Sales'] + [col for col in merged_df.columns if col.startswith('Total_Predicted_Sales')]
-# merged_df = merged_df[columns_order]
-
-# # Filter the dataframe to include only rows where Total_Predicted_Sales2 is not NaN
-# filtered_df = merged_df[merged_df['Total_Predicted_Sales2'].notna()]
-
-# # Add a new column 'avgsalespertransaction'
-# filtered_df['avgsalespertransaction'] = filtered_df['Total_Predicted_Sales2'] / 1776
-
-# # Select only the desired columns
-# result_df = filtered_df[['InvoiceDate', 'Total_Actual_Sales', 'Total_Predicted_Sales2', 'avgsalespertransaction']]
-
-# # Print out the dataframe
-# print(result_df.head())
-
-# print("Average avgsalespertransaction:")
-# print(result_df['avgsalespertransaction'].mean())
-# print("Median avgsalespertransaction:")
-# print(result_df['avgsalespertransaction'].median())
-# print("Standard deviation avgsalespertransaction:")
-# print(result_df['avgsalespertransaction'].std())
-# print("Minimum avgsalespertransaction:")
-# print(result_df['avgsalespertransaction'].min())
-# print("Maximum avgsalespertransaction:")
-# print(result_df['avgsalespertransaction'].max())
-
-# # Close connection
-# cursor.close()
-# mydb.close()
+import os
+from datetime import datetime
+from decimal import Decimal
 
 # Connect to MySQL database
 def get_db_connection():
@@ -103,68 +17,152 @@ def get_db_connection():
         password="h63Efp09-d",
         database="alvcantu$default"
     )
-    cursor = mydb.cursor(dictionary=True)
+    cursor = mydb.cursor()
     return mydb, cursor
 
-# Connect to MySQL database
-mydb, cursor = get_db_connection()
+# Prepare data for Chart.js (NEEDS FULL REWRITE)
+def prepare_data_for_chart(sql_query):
+    # Connect to MySQL database
+    mydb, cursor = get_db_connection()
 
-# Back-end for second chart.js showing actual and predicted sales per day, sales_data is pushed to front-end
-# Query to extract total sales per day
-sales_per_day_sql = '''
-    SELECT
-        DATE(InvoiceDate) AS InvoiceDate,
-        SUM(Quantity * UnitPrice) AS Total_Actual_Sales
-    FROM
-        ONR_DimInvoice AS inv
-    JOIN
-        ONR_FactTransactions AS trans ON inv.InvoiceID = trans.InvoiceID
-    GROUP BY
-        DATE(InvoiceDate)
-    ORDER BY
-        Total_Actual_Sales
-    '''
-cursor.execute(sales_per_day_sql)
-actual_sales_per_day = cursor.fetchall()
+    # Execute the query
+    cursor.execute(sql_query)
+    data_output = cursor.fetchall()
 
-# Convert SQL query result to DataFrame
-actual_sales_df = pd.DataFrame(actual_sales_per_day, columns=['InvoiceDate', 'Total_Actual_Sales'])
-actual_sales_df['InvoiceDate'] = pd.to_datetime(actual_sales_df['InvoiceDate'])
+    # Get headers from cursor description
+    headers = [desc[0] for desc in cursor.description]
 
-# Read prediction csv
-prediction_df = pd.read_csv('online_retail/online_retail_3month_predictions.csv')
-# Convert to valid data types
-prediction_df['InvoiceDate'] = pd.to_datetime(prediction_df['InvoiceDate'])
-# Group by InvoiceDate and sum all columns starting with 'Predicted_Sales'
-columns_to_sum = [col for col in prediction_df.columns if col.startswith('Predicted_Sales')]
-grouped_df = prediction_df.groupby('InvoiceDate')[columns_to_sum].sum().reset_index()
+    # Close database connection
+    cursor.close()
+    mydb.close()
 
-# Rename columns for clarity
-grouped_df = grouped_df.rename(columns={col: f'Total_{col}' for col in columns_to_sum})
+    # Determine the number of columns in the data
+    num_columns = len(headers)
 
-# Ensure both DataFrames are sorted by InvoiceDate
-grouped_df = grouped_df.sort_values('InvoiceDate')
-actual_sales_df = actual_sales_df.sort_values('InvoiceDate')
+    # Helper function to determine if a value is a number
+    def is_numeric(value):
+        return isinstance(value, (int, float, Decimal))
 
-# Merge the DataFrames on InvoiceDate
-# We'll use merge instead of concat to handle potential date mismatches
-merged_df = pd.merge(
-    actual_sales_df,
-    grouped_df,
-    on='InvoiceDate',
-    how='outer'  # Use 'outer' if you want to keep all dates from both DataFrames
-)
+    # Helper function to determine if a value is a date
+    def is_date(value):
+        try:
+            if isinstance(value, datetime):
+                return True
+            datetime.strptime(str(value), '%Y-%m-%d')
+            return True
+        except (ValueError, TypeError):
+            return False
 
-# Reorder columns to have InvoiceDate first, then Total_Actual_Sales, followed by Total_Predicted_Sales columns
-columns_order = ['InvoiceDate', 'Total_Actual_Sales'] + [col for col in merged_df.columns if col.startswith('Total_Predicted_Sales')]
-merged_df = merged_df[columns_order]
-# Replace NaN values with None (null in JSON)
-merged_df = merged_df.replace({np.nan: None})
-# Convert to dictionary for JSON serialization
-sales_data = merged_df.to_dict('records')
+    # Helper function to format date values
+    def format_date(value):
+        if isinstance(value, datetime):
+            return value.strftime('%Y-%m-%d')
+        return str(value)
 
-print(sales_data)
+    # Split headers into dimensions and measures
+    dimensions = []
+    measures = []
 
-# Close connection
-cursor.close()
-mydb.close()
+    for idx, header in enumerate(headers):
+        # Check if the first data row's value is numeric or a date
+        if is_numeric(data_output[0][idx]):
+            measures.append(header)
+        else:
+            dimensions.append(header)
+
+    # Handling different cases based on the number of dimensions and measures
+    if len(dimensions) == 1 and len(measures) == 1:
+        # Case 1: Single Dimension with One Measure
+        labels = [format_date(row[0]) if is_date(row[0]) else str(row[0]) for row in data_output]
+        data = [float(row[1]) for row in data_output]
+
+        return {
+            "labels": labels,
+            "datasets": [{
+                "label": measures[0],
+                "data": data,
+                "backgroundColor": 'rgba(54, 162, 235, 0.2)',
+                "borderColor": 'rgba(54, 162, 235, 1)',
+                "borderWidth": 1
+            }],
+            "xAxisLabels": dimensions,
+            "yAxisLabels": measures
+        }
+
+    elif len(dimensions) > 1 and len(measures) == 1:
+        # Case 2: Multiple Dimensions with One Measure
+        labels = [format_date(row[0]) if is_date(row[0]) else str(row[0]) for row in data_output]
+        data = [float(row[1]) for row in data_output]
+
+        return {
+            "labels": labels,
+            "datasets": [{
+                "label": measures[0],
+                "data": data,
+                "backgroundColor": 'rgba(255, 206, 86, 0.2)',
+                "borderColor": 'rgba(255, 206, 86, 1)',
+                "borderWidth": 1
+            }],
+            "xAxisLabels": dimensions,
+            "yAxisLabels": measures
+        }
+
+    elif len(dimensions) == 1 and len(measures) > 1:
+        # Case 3: Single Dimension with Multiple Measures
+        labels = [format_date(row[0]) if is_date(row[0]) else str(row[0]) for row in data_output]
+        datasets = []
+
+        for i, measure in enumerate(measures):
+            data = [float(row[i + 1]) for row in data_output]
+            datasets.append({
+                "label": measure,
+                "data": data,
+                "backgroundColor": f'rgba({54 + i * 30}, {162 - i * 30}, 235, 0.2)',
+                "borderColor": f'rgba({54 + i * 30}, {162 - i * 30}, 235, 1)',
+                "borderWidth": 1
+            })
+
+        return {
+            "labels": labels,
+            "datasets": datasets,
+            "xAxisLabels": dimensions,
+            "yAxisLabels": measures
+        }
+
+    elif len(dimensions) > 1 and len(measures) > 1:
+        # Case 4: Multiple Dimensions with Multiple Measures
+        labels = [format_date(row[0]) if is_date(row[0]) else str(row[0]) for row in data_output]
+        datasets = []
+
+        for i, measure in enumerate(measures):
+            data = [float(row[i + len(dimensions)]) for row in data_output]
+            datasets.append({
+                "label": measure,
+                "data": data,
+                "backgroundColor": f'rgba({75 + i * 30}, {192 - i * 30}, 192, 0.2)',
+                "borderColor": f'rgba({75 + i * 30}, {192 - i * 30}, 192, 1)',
+                "borderWidth": 1
+            })
+
+        return {
+            "labels": labels,
+            "datasets": datasets,
+            "xAxisLabels": dimensions,
+            "yAxisLabels": measures
+        }
+
+    else:
+        return {"labels": [], "datasets": [], "xAxisLabels": [], "yAxisLabels": []}
+
+sql_query = '''
+SELECT 
+    date, 
+    close_price 
+FROM 
+    ST_FactPrices 
+WHERE 
+    ticker = 'TSLA' 
+    AND date >= CURDATE() - INTERVAL 3 WEEK LIMIT 6900;
+'''
+
+print(prepare_data_for_chart(sql_query))
