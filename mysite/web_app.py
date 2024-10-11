@@ -666,6 +666,7 @@ def documentation():
         'attempt3_etl_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt3_etl_mlmodel_online_retail.py',
         'attempt4_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt4_create_mlmodel_online_retail.py',
         'attempt4_etl_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt4_etl_mlmodel_online_retail.py',
+        'performancemeasures_mlmodel_online_retail': '/home/alvcantu/online_retail/performancemeasures_mlmodel_online_retail.py',
     }
 
     replacements = [
