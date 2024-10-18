@@ -26,8 +26,18 @@ def send_email(subject, body, to_email):
 def run_command(command):
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     stdout, stderr = process.communicate()
+    stdout_decoded = stdout.decode()
+    stderr_decoded = stderr.decode()
+    if "Data quality issues found. Please resolve before proceeding." in stdout_decoded:
+        error_message = f"Data quality issues found in southpark/etl/etl_southpark.py. Please resolve before proceeding."
+        print(error_message)
+        send_email(
+            subject="South Park ETL Alert: Command Execution Failed",
+            body=error_message,
+            to_email="alvcantu@icloud.com"
+        )
     if process.returncode != 0:
-        error_message = f"Error executing command: {command}\nstderr: {stderr.decode()}"
+        error_message = f"Error executing command: {command}\nstderr: {stderr_decoded}"
         print(error_message)
         send_email(
             subject="South Park ETL Alert: Command Execution Failed",

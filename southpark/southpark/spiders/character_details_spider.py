@@ -31,7 +31,6 @@ class character_details_spider(scrapy.Spider):
         except Exception as e:
             self.log(f"Error reading file {csv_file_path}: {e}")
 
-
     def parse(self, response):
         # Extract data from Main and Secondary Characters sections
         # Uses title of section as character name and paragraph below as role

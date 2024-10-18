@@ -23,6 +23,21 @@ def remove_all_brackets(text):
 def remove_square_brackets(text):
     return re.sub(r'\[[^]]*\]', '', text).strip()
 
+# Function to extract the first two sentences only
+def keep_first_two_sentences(text):
+    # Split the text into sentences using a regular expression to handle sentence boundaries
+    sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?)\s', text)
+
+    # Join the first two sentences, ensuring proper spacing
+    if len(sentences) >= 2:
+        result = sentences[0] + ' ' + sentences[1]
+    else:
+        result = ' '.join(sentences)  # Return all if less than 2 sentences
+    
+    return result.strip()
+
+
+
 #Remove cases where column names appear as values
 df_character_details_stg = df_character_details_stg[
                                 (df_character_details_stg['character_name'] != 'character_name') &
@@ -35,6 +50,7 @@ df_character_details_stg.loc[df_character_details_stg['character_name'] == 'Gera
 # Remove brackets and their contents, all brackets from character_name, square from only role.
 df_character_details_stg['character_name'] = df_character_details_stg['character_name'].apply(remove_all_brackets)
 df_character_details_stg['role'] = df_character_details_stg['role'].apply(remove_square_brackets)
+df_character_details_stg['role'] = df_character_details_stg['role'].apply(keep_first_two_sentences)
 
 # Function to determine character_id, default is first name. Conditions for specific names apply.
 def get_character_id(name):

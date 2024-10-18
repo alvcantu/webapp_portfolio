@@ -227,7 +227,7 @@ def create_mysql_tables_and_insert_data(df_episodes, df_characters, df_fact):
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS SP_DimCharacters (
             character_name VARCHAR(255) NOT NULL UNIQUE COMMENT 'Full name of the character',
-            role VARCHAR(255) NOT NULL COMMENT 'Role of the character in the series',
+            role TEXT NOT NULL COMMENT 'Role of the character in the series',
             character_id VARCHAR(255) PRIMARY KEY COMMENT 'Unique identifier and nickname for each character',
             CONSTRAINT chk_character_id CHECK (character_id <> ''),
             CONSTRAINT chk_character_name CHECK (character_name <> ''),
@@ -315,5 +315,8 @@ if not errors_df_episodes and not errors_df_characters and not errors_df_fact:
     create_mysql_tables_and_insert_data(df_episodes, df_characters, df_fact)
 else:
     print("Data quality issues found. Please resolve before proceeding.")
+    print(errors_df_episodes)
+    print(errors_df_characters)
+    print(errors_df_fact)
 
 
