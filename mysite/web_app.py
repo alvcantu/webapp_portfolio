@@ -43,7 +43,7 @@ def is_read_only_query(sql_query):
 
     return True, None
 
-# Prepare data for Chart.js (NEEDS multiple dimensions case to be fixed)
+# Prepare data for Chart.js
 def prepare_data_for_chart(sql_query):
     # Connect to MySQL database
     mydb, cursor = get_db_connection()
@@ -64,7 +64,7 @@ def prepare_data_for_chart(sql_query):
 
     # Helper function to determine if a value is a number
     def is_numeric(value):
-        return isinstance(value, (int, float, Decimal))
+        return value is None or isinstance(value, (int, float, Decimal))
 
     # Helper function to determine if a value is a date
     def is_date(value):
@@ -93,7 +93,8 @@ def prepare_data_for_chart(sql_query):
         else:
             dimensions.append(header)
 
-    labels = [" ".join([format_date(str(val)) if is_date(val) else str(val) for val in row[:-1]]) for row in data_output]
+    # Labels only include dimensions and are formated when is date
+    labels = [" ".join([format_date(str(row[headers.index(dim)])) if is_date(row[headers.index(dim)]) else str(row[headers.index(dim)]) for dim in dimensions]) for row in data_output]
     datasets = []
 
     for i, measure in enumerate(measures):
