@@ -140,12 +140,18 @@
             if (selectedVisual === 'Horizontal Bar') {
                 chartType = 'bar';
                 indexAxisValue = 'y';
+                xAxisTitle = chartData.yAxisLabels[0] || 'Y-Axis';
+                yAxisTitle = chartData.xAxisLabels[0] || 'X-Axis';
             } else if (selectedVisual === 'Vertical Bar') {
                 chartType = 'bar';
                 indexAxisValue = 'x';
+                xAxisTitle = chartData.xAxisLabels[0] || 'X-Axis';
+                yAxisTitle = chartData.yAxisLabels[0] || 'Y-Axis';
             } else {
                 chartType = 'line';
                 indexAxisValue = undefined; // No indexAxis for non-bar charts
+                xAxisTitle = chartData.xAxisLabels[0] || 'X-Axis';
+                yAxisTitle = chartData.yAxisLabels[0] || 'Y-Axis';
             }
 
             var chartOptions = {
@@ -166,7 +172,7 @@
                     x: {
                         title: {
                             display: true,
-                            text: chartData.xAxisLabels[0] || 'X-Axis', // Use the first label or default to 'X-Axis'
+                            text: xAxisTitle, //chartData.xAxisLabels[0] || 'X-Axis', // Use the first label or default to 'X-Axis'
                             color: 'white'
                         },
                         ticks: {
@@ -176,7 +182,7 @@
                     y: {
                         title: {
                             display: true,
-                            text: chartData.yAxisLabels[0] || 'Y-Axis', // Use the first y-axis label or default to 'Y-Axis'
+                            text: yAxisTitle, //chartData.yAxisLabels[0] || 'Y-Axis', // Use the first y-axis label or default to 'Y-Axis'
                             color: 'white'
                         },
                         ticks: {
