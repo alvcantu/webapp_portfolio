@@ -9,10 +9,16 @@ df = pd.read_csv('/home/alvcantu/stocks/etl/raw_company_list_url.csv')
 # Extract required info from yfinance
 def get_stock_info(ticker):
     # Manually adjust ticker symbols as needed
+    # Saudi Aramco
     if ticker == '2222':
         ticker = '2222.SR'
+    # Berkshire Hathaway
     if ticker == 'BRK.A':
         ticker = 'BRK-A'
+    # TSMC
+    if ticker == '2330':
+        ticker = 'TSMC34.SA'
+    # PetroChina
     elif ticker == '857':
         ticker = '0857.HK'
     
