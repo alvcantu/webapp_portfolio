@@ -89,7 +89,8 @@
       <select name="selected_visual" id="selected_visual">
         <option value="Table" {% if selected_visual == 'Table' %}selected{% endif %}>Table</option>
         <option value="Line" {% if selected_visual == 'Line' %}selected{% endif %}>Line</option>
-        <option value="Bar" {% if selected_visual == 'Bar' %}selected{% endif %}>Bar</option>
+        <option value="Vertical Bar" {% if selected_visual == 'Vertical Bar' %}selected{% endif %}>Vertical Bar</option>
+        <option value="Horizontal Bar" {% if selected_visual == 'Horizontal Bar' %}selected{% endif %}>Horizontal Bar</option>
       </select>
 
       <!-- Update Visual Button -->
@@ -128,12 +129,26 @@
         <h3>{{ user_query }}</h3>
         <canvas id="self-service-chart"></canvas>
         <script>
-        var ctx = document.getElementById('self-service-chart').getContext('2d');
-        var chartData = {{ data_output | tojson }};
-        var chart = new Chart(ctx, {
-            type: '{{ selected_visual.lower() }}', // Dynamic chart type
-            data: chartData,
-            options: {
+            var ctx = document.getElementById('self-service-chart').getContext('2d');
+            var chartData = {{ data_output | tojson }};
+            var selectedVisual = '{{ selected_visual }}';
+            
+            // Logic based on selected_visual
+            var chartType;
+            var indexAxisValue;
+            
+            if (selectedVisual === 'Horizontal Bar') {
+                chartType = 'bar';
+                indexAxisValue = 'y';
+            } else if (selectedVisual === 'Vertical Bar') {
+                chartType = 'bar';
+                indexAxisValue = 'x';
+            } else {
+                chartType = 'line';
+                indexAxisValue = undefined; // No indexAxis for non-bar charts
+            }
+
+            var chartOptions = {
                 plugins: {
                     legend: {
                         labels: {
@@ -169,9 +184,19 @@
                         }
                     }
                 }
+            };
+
+            // If indexAxisValue is defined (only for bar charts), set indexAxis
+            if (indexAxisValue) {
+                chartOptions.indexAxis = indexAxisValue;
             }
-        });
-        </script>
+            
+            var chart = new Chart(ctx, {
+                type: chartType,
+                data: chartData,
+                options: chartOptions
+            });
+        </script>       
     {% endif %}
   {% endif %}
 </body>
