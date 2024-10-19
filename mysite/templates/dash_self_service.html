@@ -125,6 +125,7 @@
         </script>
     {% else %}
     <!--Chart.js-->
+        <h3>{{ user_query }}</h3>
         <canvas id="self-service-chart"></canvas>
         <script>
         var ctx = document.getElementById('self-service-chart').getContext('2d');
@@ -134,14 +135,6 @@
             data: chartData,
             options: {
                 plugins: {
-                    title: {
-                        display: true,
-                        text: '{{ user_query }}',
-                        color: 'white',
-                        font: {
-                            size: 16 // You can adjust the font size
-                        }
-                    },
                     legend: {
                         labels: {
                             color: 'white'

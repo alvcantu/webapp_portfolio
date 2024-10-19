@@ -64,7 +64,7 @@ def prepare_data_for_chart(sql_query):
     measures = []
 
     for idx, header in enumerate(headers):
-        # Check if the first data row's value is numeric or a date
+        # Check if the first data row's value is numeric
         if is_numeric(data_output[0][idx]):
             measures.append(header)
         else:
@@ -154,7 +154,7 @@ def prepare_data_for_chart(sql_query):
     else:
         return {"labels": [], "datasets": [], "xAxisLabels": [], "yAxisLabels": []}
 
-sql_query = '''
+sql_query_1d_1m_NOTWORKING = '''
 SELECT 
     date, 
     close_price 
@@ -165,4 +165,57 @@ WHERE
     AND date >= CURDATE() - INTERVAL 3 WEEK LIMIT 6900;
 '''
 
-print(prepare_data_for_chart(sql_query))
+sql_query_1d_1m_WORKING = '''
+SELECT 
+    di.Country,
+    COUNT(ft.TransactionID) AS TransactionCount
+FROM 
+    ONR_DimInvoice di
+JOIN 
+    ONR_FactTransactions ft ON di.InvoiceID = ft.InvoiceID
+GROUP BY 
+    di.Country LIMIT 6900;
+'''
+
+sql_query_1d_1m_WORKING = '''
+SELECT 
+    di.Country,
+    COUNT(ft.TransactionID) AS TransactionCount,
+    AVG(ft.Quantity) AS AverageQuantity
+FROM 
+    ONR_DimInvoice di
+JOIN 
+    ONR_FactTransactions ft ON di.InvoiceID = ft.InvoiceID
+GROUP BY 
+    di.Country LIMIT 6900;
+'''
+
+sql_query_2d_1m_NOTWORKING = '''
+SELECT 
+    DATE_FORMAT(di.InvoiceDate, '%Y-%m') AS YearMonth,
+    di.Country,
+    COUNT(ft.TransactionID) AS TransactionCount
+FROM 
+    ONR_DimInvoice di
+JOIN 
+    ONR_FactTransactions ft ON di.InvoiceID = ft.InvoiceID
+GROUP BY 
+    YearMonth, di.Country
+ORDER BY 
+    YearMonth, di.Country LIMIT 6900;
+'''
+
+sql_query_2d_1m_NOTWORKING = '''
+SELECT 
+    di.Country, 
+    di.InvoiceID, 
+    COUNT(ft.TransactionID) AS TransactionCount
+FROM 
+    ONR_DimInvoice di
+JOIN 
+    ONR_FactTransactions ft ON di.InvoiceID = ft.InvoiceID
+GROUP BY 
+    di.Country, di.InvoiceID LIMIT 6900;
+'''
+
+print(prepare_data_for_chart(sql_query_2d_1m_NOTWORKING))
