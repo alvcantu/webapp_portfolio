@@ -87,7 +87,7 @@ def prepare_data_for_chart(sql_query):
     measures = []
 
     for idx, header in enumerate(headers):
-        # Check if the first data row's value is numeric or a date
+        # Check if the first data row's value is numeric
         if is_numeric(data_output[0][idx]):
             measures.append(header)
         else:
@@ -97,7 +97,8 @@ def prepare_data_for_chart(sql_query):
     if len(dimensions) == 1 and len(measures) == 1:
         # Case 1: Single Dimension with One Measure
         labels = [format_date(row[0]) if is_date(row[0]) else str(row[0]) for row in data_output]
-        data = [float(row[1]) for row in data_output]
+        # data = [float(row[1]) for row in data_output]
+        data = [row[1] for row in data_output]
 
         return {
             "labels": labels,
@@ -115,7 +116,8 @@ def prepare_data_for_chart(sql_query):
     elif len(dimensions) > 1 and len(measures) == 1:
         # Case 2: Multiple Dimensions with One Measure
         labels = [format_date(row[0]) if is_date(row[0]) else str(row[0]) for row in data_output]
-        data = [float(row[1]) for row in data_output]
+        # data = [float(row[1]) for row in data_output]
+        data = [row[1] for row in data_output]
 
         return {
             "labels": labels,
@@ -136,7 +138,8 @@ def prepare_data_for_chart(sql_query):
         datasets = []
 
         for i, measure in enumerate(measures):
-            data = [float(row[i + 1]) for row in data_output]
+            #data = [float(row[i + 1]) for row in data_output]
+            data = [row[i + 1] for row in data_output]
             datasets.append({
                 "label": measure,
                 "data": data,
@@ -158,7 +161,8 @@ def prepare_data_for_chart(sql_query):
         datasets = []
 
         for i, measure in enumerate(measures):
-            data = [float(row[i + len(dimensions)]) for row in data_output]
+            # data = [float(row[i + len(dimensions)]) for row in data_output]
+            data = [row[i + len(dimensions)] for row in data_output]
             datasets.append({
                 "label": measure,
                 "data": data,
