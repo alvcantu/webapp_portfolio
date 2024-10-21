@@ -18,12 +18,14 @@
   <meta name="msapplication-TileColor" content="#b79841">
   <meta name="theme-color" content="#ffffff">
 
-  <!-- Prism.js library and its Tomorrow theme for syntax highlighting. By adding class="language-python" to the <code> tags,
-        Prism.js will automatically apply Python syntax highlighting to the enclosed code. --->
+  <!-- Prism.js CSS (Tomorrow theme) -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/themes/prism-tomorrow.min.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/prism.min.js"></script>
+  <!-- Prism.js Core -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/components/prism-core.min.js"></script>
+  <!-- Prism.js Language: Python -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/components/prism-python.min.js"></script>
-
+  <!-- Prism.js Plugin: Autoloader (optional if using more languages dynamically) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/plugins/autoloader/prism-autoloader.min.js"></script>
 
   <!-- References CSS styling -->
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
@@ -44,6 +46,7 @@
           <li><a href="#database-stocks" class="documentation-button">Stocks data mart</a></li>
           <li><a href="#database-southpark" class="documentation-button">South park data mart</a></li>
           <li><a href="#database-online_retail" class="documentation-button">Online retail data mart</a></li>
+          <li><a href="#database-bank_marketing" class="documentation-button">Bank marketing data mart</a></li>
         </ul>
       </li>
       <li><a href="#app" class="documentation-button">How app was made</a>
@@ -57,6 +60,11 @@
       <li><a href="https://www.linkedin.com/in/alvcantu/" class="weblink-button">My LinkedIn</a></li>
     </ul>
   </nav>
+
+  <!-- Initialize Prism.js -->
+  <script>
+    Prism.highlightAll();
+  </script>
 
   <div class="content">
     <h1>Welcome to Alvaro's App Documentation</h1>
@@ -136,6 +144,11 @@
           <pre><code class="language-python">{{ attempt4_etl_mlmodel_online_retail }}</code></pre>
           <h4>Using all these models above I then execute SQL queries of performance metrics for each, these are then shown in the bar graph in the dash:</h4>
           <pre><code class="language-python">{{ performancemeasures_mlmodel_online_retail }}</code></pre>
+        <section id="database-bank_marketing"  >
+          <h2>Bank marketing data mart</h2>
+          <h4>Transforming the data anc inserting it into mySQL database with data quality constraints.</h4>
+          <pre><code class="language-python">{{ etl_bank_marketing }}</code></pre>
+        </section>
       </section>
 
       <section id="app">
@@ -161,5 +174,6 @@
 
   <!-- References shared app Javascript logic -->
   <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+
 </body>
 </html>

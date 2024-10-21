@@ -1,196 +1,84 @@
-import csv
-import requests
-import json
-import mysql.connector
-from mysql.connector import Error
 import pandas as pd
 import numpy as np
-import os
-from datetime import datetime
-from decimal import Decimal
 
-# Connect to MySQL database
-def get_db_connection():
-    mydb = mysql.connector.connect(
-        host="alvcantu.mysql.pythonanywhere-services.com",
-        user="alvcantu",
-        password="h63Efp09-d",
-        database="alvcantu$default"
-    )
-    cursor = mydb.cursor()
-    return mydb, cursor
-
-def prepare_data_for_chart(sql_query):
-    # Connect to MySQL database
-    mydb, cursor = get_db_connection()
-
-    # Execute the query
-    cursor.execute(sql_query)
-    data_output = cursor.fetchall()
-
-    # Get headers from cursor description
-    headers = [desc[0] for desc in cursor.description]
-
-    # Close database connection
-    cursor.close()
-    mydb.close()
-
-    # Helper function to determine if a value is a number
-    def is_numeric(value):
-        # Return True if value is None or if it's an instance of numeric types
-        return value is None or isinstance(value, (int, float, Decimal))
-
-    # Helper function to determine if a value is a date
-    def is_date(value):
-        try:
-            if isinstance(value, datetime):
-                return True
-            datetime.strptime(str(value), '%Y-%m-%d')
-            return True
-        except (ValueError, TypeError):
-            return False
-
-    # Helper function to format date values
-    def format_date(value):
-        if isinstance(value, datetime):
-            return value.strftime('%Y-%m-%d')
-        return str(value)
-
-    # Split headers into dimensions and measures
-    dimensions = []
-    measures = []
-
-    for idx, header in enumerate(headers):
-        # Check if the first data row's value is numeric
-        if is_numeric(data_output[0][idx]):
-            measures.append(header)
-        else:
-            dimensions.append(header)
-
-    # Labels only include dimensions and are formated when is date
-    labels = [" ".join([format_date(str(row[headers.index(dim)])) if is_date(row[headers.index(dim)]) else str(row[headers.index(dim)]) for dim in dimensions]) for row in data_output]
-    datasets = []
-
-    for i, measure in enumerate(measures):
-        # Here we directly use the measure's index relative to all headers, not just measures
-        data = [row[headers.index(measure)] for row in data_output]
-        datasets.append({
-            "label": measure,
-            "data": data,
-            "backgroundColor": f'rgba({54 + i * 30}, {162 - i * 30}, 235, 0.2)',
-            "borderColor": f'rgba({54 + i * 30}, {162 - i * 30}, 235, 1)',
-            "borderWidth": 1
-        })
-
-    return {
-        "labels": labels,
-        "datasets": datasets,
-        "xAxisLabels": dimensions,
-        "yAxisLabels": measures
+def convert_df_for_mysql(df):
+    # Convert object types that should be ENUM to categorical with a specified set of categories
+    categories = {
+        'job': ['admin.', 'blue-collar', 'entrepreneur', 'housemaid', 'management', 'retired', 'self-employed', 'services', 'student', 'technician', 'unemployed', 'unknown'],
+        'marital': ['divorced', 'married', 'single', 'unknown'],
+        'default': ['no', 'yes', 'unknown'],
+        'housing': ['no', 'yes', 'unknown'],
+        'loan': ['no', 'yes', 'unknown'],
+        'contact': ['cellular', 'telephone', 'unknown'],
+        'month': ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'],
+        'poutcome': ['failure', 'nonexistent', 'success', 'unknown'],
+        'y': ['yes', 'no']
     }
 
-    # # Handling different cases based on the number of dimensions and measures
-    # if len(dimensions) == 1 and len(measures) == 1:
-    #     # Case 1: Single Dimension with One Measure
-    #     labels = [format_date(row[0]) if is_date(row[0]) else str(row[0]) for row in data_output]
-    #     #labels = str(row[0]) for row in data_output
-    #     data = [row[-1] for row in data_output]  # Assuming the measure is the last item in each row
+    for col, cats in categories.items():
+        df[col] = pd.Categorical(df[col], categories=cats, ordered=False)
 
-    #     return {
-    #         "labels": labels,
-    #         "datasets": [{
-    #             "label": measures[0],
-    #             "data": data,
-    #             "backgroundColor": 'rgba(54, 162, 235, 0.2)',
-    #             "borderColor": 'rgba(54, 162, 235, 1)',
-    #             "borderWidth": 1
-    #         }],
-    #         "xAxisLabels": dimensions,
-    #         "yAxisLabels": measures
-    #     }
+    # Ensure 'balance' is float32 for MySQL FLOAT compatibility
+    df['balance'] = df['balance'].astype('float32')
 
-    # elif len(dimensions) > 1 and len(measures) == 1:
-    #     # Case 2: Multiple Dimensions with One Measure
-    #     labels = [" ".join([format_date(str(val)) if is_date(val) else str(val) for val in row[:-1]]) for row in data_output]
-    #     # labels = [format_date(row[0]) if is_date(row[0]) else str(row[0]) for row in data_output]
-    #     data = [row[-1] for row in data_output]  # Assuming the measure is the last item in each row
-    #     # data = [row[1] for row in data_output]
+    # Convert duration, campaign, pdays, previous to int32 for MySQL INT compatibility
+    for col in ['duration', 'campaign', 'pdays', 'previous']:
+        df[col] = df[col].astype('int32')
 
-    #     return {
-    #         "labels": labels,
-    #         "datasets": [{
-    #             "label": measures[0],
-    #             "data": data,
-    #             "backgroundColor": 'rgba(255, 206, 86, 0.2)',
-    #             "borderColor": 'rgba(255, 206, 86, 1)',
-    #             "borderWidth": 1
-    #         }],
-    #         "xAxisLabels": dimensions,
-    #         "yAxisLabels": measures
-    #     }
+    # Convert 'y' to 'subscribed_y' with boolean interpretation
+    df['subscribed_y'] = df['y'].map({'yes': 1, 'no': 0}).astype('int8')  # TINYINT in MySQL
+    del df['y']  # Remove the old 'y' column
 
-    # elif len(dimensions) == 1 and len(measures) > 1:
-    #     # Case 3: Single Dimension with Multiple Measures
-    #     labels = [format_date(row[0]) if is_date(row[0]) else str(row[0]) for row in data_output]
-    #     datasets = []
+    # Rename default to default_credit
+    df = df.rename(columns={'default': 'default_credit'})
 
-    #     for i, measure in enumerate(measures):
-    #         data = [row[i + 1] for row in data_output]
-    #         datasets.append({
-    #             "label": measure,
-    #             "data": data,
-    #             "backgroundColor": f'rgba({54 + i * 30}, {162 - i * 30}, 235, 0.2)',
-    #             "borderColor": f'rgba({54 + i * 30}, {162 - i * 30}, 235, 1)',
-    #             "borderWidth": 1
-    #         })
+    # Add customer_id as a unique identifier
+    df['customer_id'] = range(1, len(df) + 1)
+    
+    # Ensure all numeric columns are numeric to catch any potential issues
+    numeric_columns = ['age', 'balance', 'duration', 'campaign', 'pdays', 'previous']
+    for col in numeric_columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')  # Coerce to handle potential non-numeric values
 
-    #     return {
-    #         "labels": labels,
-    #         "datasets": datasets,
-    #         "xAxisLabels": dimensions,
-    #         "yAxisLabels": measures
-    #     }
-
-    # elif len(dimensions) > 1 and len(measures) > 1:
-    #     # Case 4: Multiple Dimensions with Multiple Measures
-    #     labels = [format_date(row[0]) if is_date(row[0]) else str(row[0]) for row in data_output]
-    #     #labels = str(row[0]) for row in data_output
-    #     datasets = []
-
-    #     for i, measure in enumerate(measures):
-    #         # data = [float(row[i + len(dimensions)]) for row in data_output]
-    #         data = [row[i + len(dimensions)] for row in data_output]
-    #         datasets.append({
-    #             "label": measure,
-    #             "data": data,
-    #             "backgroundColor": f'rgba({75 + i * 30}, {192 - i * 30}, 192, 0.2)',
-    #             "borderColor": f'rgba({75 + i * 30}, {192 - i * 30}, 192, 1)',
-    #             "borderWidth": 1
-    #         })
-
-    #     return {
-    #         "labels": labels,
-    #         "datasets": datasets,
-    #         "xAxisLabels": dimensions,
-    #         "yAxisLabels": measures
-    #     }
-
-    # else:
-    #     return {"labels": [], "datasets": [], "xAxisLabels": [], "yAxisLabels": []}
+    return df
 
 
-sql_query= '''
-SELECT 
-    date,
-    close_price,
-    forecast_price_arima 
-FROM 
-    ST_FactPrices 
-WHERE 
-    ticker = 'TSLA' AND 
-    date >= CURDATE() - INTERVAL 6 WEEK
-ORDER BY 
-    date DESC LIMIT 6900;
-'''
+# Read data from CSV files
+df_nonadditional = pd.read_csv('/home/alvcantu/bank_marketing/bank-full.csv',sep=';')
+df_additional = pd.read_csv('/home/alvcantu/bank_marketing/bank-additional-full.csv', sep=';')
 
-print(prepare_data_for_chart(sql_query))
+# Drop columns that are not needed in df additional as they're only available in one csv
+df_nonadditional = df_nonadditional.drop(['day'], axis=1)
+df_additional = df_additional.drop(['day_of_week', 'emp.var.rate', 'cons.price.idx', 'cons.conf.idx', 'euribor3m', 'nr.employed'], axis=1)
+
+# Union the two dataframes
+union_df = pd.concat([df_nonadditional, df_additional], ignore_index=True)
+
+# Remove duplicates on merged dataframe
+df = union_df.drop_duplicates()
+
+# Replace Nan Balance with 0
+df['balance'] = df['balance'].fillna(0)
+# Replace 'other' with 'unknown for poutomc column
+df['poutcome'] = df['poutcome'].replace('other', 'unknown')
+
+# Assuming you have your DataFrame named 'df'
+df_ready = convert_df_for_mysql(df)
+column_order = [
+    'customer_id', 'age', 'job', 'marital', 'education', 'default_credit', 'balance', 'housing', 'loan', 'contact', 'month', 
+    'duration', 'campaign', 'pdays', 'previous', 'poutcome', 'subscribed_y'
+]
+df_ready = df_ready[column_order]
+
+print(df_ready.isnull().sum())  # This will show you if and where there are any NaN values
+# print("Non aditional csv:")
+# print(df_nonadditional['contact'].unique())
+# print("Additional csv:")
+# print(df_additional['contact'].unique())
+# print("After union:")
+# print(union_df['contact'].unique())
+# print("After removing dups:")
+# print(df['contact'].unique())
+# print("After converting to mysql:")
+# print(df_ready['contact'].unique())
+

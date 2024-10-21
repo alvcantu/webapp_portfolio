@@ -108,11 +108,12 @@ def prepare_data_for_chart(sql_query):
             "borderWidth": 1
         })
 
+    # Return is conditional on whether there is data to display to avoid internal errors
     return {
-        "labels": labels,
-        "datasets": datasets,
-        "xAxisLabels": dimensions,
-        "yAxisLabels": measures
+        "labels": labels if labels else [],
+        "datasets": datasets if datasets else [],
+        "xAxisLabels": dimensions if dimensions else "No data",
+        "yAxisLabels": measures if measures else "No data"
     }
 
 # Function to load the mappings into dictionaries
@@ -278,7 +279,7 @@ def dash_self_service():
         data = {
             "model": "openrouter/auto",  # You can change this to another model if needed
             "messages": [
-                {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to executed. Do not join tables without relationhips present in the schema."},
+                {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to executed. Do not join tables without relationhips present in the schema. Do not use datepart functions."},
                 {"role": "user", "content": prompt}
             ]
         }
@@ -308,24 +309,18 @@ def dash_self_service():
                            user_query=user_query,
                            data_output=data_output)
 
-@app.route('/dash_ml_models_online_retail',methods=['GET', 'POST'])
+@app.route('/dash_ml_models_online_retail', methods=['GET', 'POST'])
 def dash_ml_models_online_retail():
-
-    # Connect to MySQL database
-    mydb, cursor = get_db_connection()
-
-    # Define metrics
-    metrics = ['RMSE', 'MSE', 'MAE', 'MAPE','AVG % difference from actual']
+    # Define metrics and get selected performance measure
+    metrics = ['RMSE', 'MSE', 'MAE', 'MAPE', 'AVG % difference from actual']
     selected_performance_measure = request.args.get('performance_measure', metrics[0])
-    # Read performance data from CSV
+    
+    # Read and filter performance data directly during loading
     performance_data = pd.read_csv('online_retail/performancemeasures_mlmodel_online_retail.csv')
-    # Filter csv by selected performance measure
-    performance_data = performance_data[performance_data.iloc[:, 1] == selected_performance_measure]
-    # Convert performance_data to list of tuples
-    performance_data = list(performance_data.itertuples(index=False, name=None))
+    filtered_performance_data = performance_data[performance_data.iloc[:, 1] == selected_performance_measure]
+    performance_data = list(filtered_performance_data.itertuples(index=False, name=None))
 
-    # Back-end for second chart.js showing actual and predicted sales per day, sales_data is pushed to front-end
-    # Query to extract total sales per day
+    # Query actual sales data from database using a context manager for efficient connection handling
     sales_per_day_sql = '''
         SELECT
             DATE(InvoiceDate) AS InvoiceDate,
@@ -337,56 +332,46 @@ def dash_ml_models_online_retail():
         GROUP BY
             DATE(InvoiceDate)
         ORDER BY
-            Total_Actual_Sales
-        '''
+            InvoiceDate
+    '''
+
+    # Connect to MySQL database
+    mydb, cursor = get_db_connection()
     cursor.execute(sales_per_day_sql)
     actual_sales_per_day = cursor.fetchall()
 
-    # Convert SQL query result to DataFrame
+    # Convert SQL query result to DataFrame and ensure date formatting
     actual_sales_df = pd.DataFrame(actual_sales_per_day, columns=['InvoiceDate', 'Total_Actual_Sales'])
     actual_sales_df['InvoiceDate'] = pd.to_datetime(actual_sales_df['InvoiceDate'])
 
-    # Read prediction csv
-    prediction_df = pd.read_csv('online_retail/online_retail_pivoted_perday_3month_predictions.csv')
-    # Drop all columns except for InvoiceDate and those that start with 'Total_Predicted_Sales'
-    prediction_df = prediction_df.drop(columns=[col for col in prediction_df.columns if col != 'InvoiceDate' and not col.startswith('Total_Predicted_Sales')])
-    # Convert InvoiceDate to datetime
+    # Load and filter the prediction data more efficiently
+    prediction_df = pd.read_csv('online_retail/online_retail_pivoted_perday_3month_predictions.csv', usecols=lambda col: col == 'InvoiceDate' or col.startswith('Total_Predicted_Sales'))
     prediction_df['InvoiceDate'] = pd.to_datetime(prediction_df['InvoiceDate'])
 
     # Ensure both DataFrames are sorted by InvoiceDate
-    prediction_df = prediction_df.sort_values('InvoiceDate')
-    actual_sales_df = actual_sales_df.sort_values('InvoiceDate')
+    actual_sales_df.sort_values('InvoiceDate', inplace=True)
+    prediction_df.sort_values('InvoiceDate', inplace=True)
 
-    # Merge the DataFrames on InvoiceDate
-    # We'll use merge instead of concat to handle potential date mismatches
-    merged_df = pd.merge(
-        actual_sales_df,
-        prediction_df,
-        on='InvoiceDate',
-        how='outer'  # Use 'outer' if you want to keep all dates from both DataFrames
-    )
+    # Merge DataFrames, keeping all dates from both sides
+    merged_df = pd.merge(actual_sales_df, prediction_df, on='InvoiceDate', how='outer')
 
-    # Reorder columns to have InvoiceDate first, then Total_Actual_Sales, followed by Total_Predicted_Sales columns
+    # Reorder columns and handle missing data
     columns_order = ['InvoiceDate', 'Total_Actual_Sales'] + [col for col in merged_df.columns if col.startswith('Total_Predicted_Sales')]
     merged_df = merged_df[columns_order]
     # Replace NaN values with None (null in JSON)
     merged_df = merged_df.replace({np.nan: None})
-    # Convert 'InvoiceDate' to a valid datetime object
-    merged_df['InvoiceDate'] = pd.to_datetime(merged_df['InvoiceDate'])
-    # Format it to ISO 8601 (YYYY-MM-DDTHH:mm:ssZ)
+    
+    # Format 'InvoiceDate' to ISO 8601 (YYYY-MM-DD) for JSON
     merged_df['InvoiceDate'] = merged_df['InvoiceDate'].dt.strftime('%Y-%m-%d')
+
     # Convert to dictionary for JSON serialization
     sales_data = merged_df.to_dict('records')
 
-    # Close connection
-    cursor.close()
-    mydb.close()
-
     return render_template('dash_ml_models_online_retail.html',
-                            selected_performance_measure=selected_performance_measure,
-                            performance_data=performance_data,
-                            sales_data=sales_data,
-                            metrics=metrics)
+                           selected_performance_measure=selected_performance_measure,
+                           performance_data=performance_data,
+                           sales_data=sales_data,
+                           metrics=metrics)
 
 @app.route('/dash_southpark')
 def dash_southpark():
@@ -605,6 +590,8 @@ def documentation():
         'attempt4_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt4_create_mlmodel_online_retail.py',
         'attempt4_etl_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt4_etl_mlmodel_online_retail.py',
         'performancemeasures_mlmodel_online_retail': '/home/alvcantu/online_retail/performancemeasures_mlmodel_online_retail.py',
+        # Bank Marketing
+        'etl_bank_marketing': '/home/alvcantu/bank_marketing/etl_bank_marketing.py',
     }
 
     replacements = [
