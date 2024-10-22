@@ -1,0 +1,20 @@
+// Sandbox code for Codeium Autocomplete: Context.
+
+class Pet {
+  name: string;
+  age: number;
+
+  constructor(name: string, age: number) {
+    this.name = name;
+    this.age = age;
+  }
+}
+
+const fluffy = new Pet("Fluffy", 3);
+
+// STEP 1: Create a Vet named "Dr. Smith" for annual checkups
+// and surgeries with a decade of experience.
+
+// STEP 2: Print the vet's information.
+
+// STEP 3: Send fluffy for an annual checkup and get the cost.

@@ -1,4 +1,5 @@
-import pandas as pd
+
+8/home/alvcantu/bank_marketing/ml_model_bank_marketing.pyŠ(import pandas as pd
 import numpy as np
 import mysql.connector
 from mysql.connector import Error
@@ -136,4 +137,16 @@ with open('accuracy_ml_model_classification_bank_marketing.txt', 'w') as f:
     f.write(str(accuracy))
 
 # Save the model
-xgb_class.save_model('ml_model_classification_bank_marketing.json')
+xgb_class.save_model('ml_model_classification_bank_marketing.json')` `ÃÃÄ
+ÄÄ 
+Äİ İÿ
+ÿ	 			ññô
+ô¦ ¦§
+§Í# Í#Ï#
+Ï#¾& 
+¾&Ç& 0Ç&Í&*$bb1bb65a-1944-472b-ac01-78f71e1aad670
+Í&Î& 2Î&Ù& *$3054d509-892c-46b4-922c-1c0fb4716fd00Ù&â&â&ú&2ú&µ' *$3054d509-892c-46b4-922c-1c0fb4716fd00
+µ'¶' 
+¶'İ' 
+İ'õ' 
+õ'Š( "(7819dda098421ea5c0fedc4efd2807baf5d803b2*/home/alvcantu2?file:///home/alvcantu/bank_marketing/ml_model_bank_marketing.py:file:///home/alvcantu

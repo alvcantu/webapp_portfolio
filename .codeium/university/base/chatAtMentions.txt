@@ -1,0 +1,111 @@
+// Sandbox code for Codeium Chat: At Mentions.
+
+class Pet {
+    name: string;
+    age: number;
+
+    constructor(name: string, age: number) {
+        this.name = name;
+        this.age = age;
+    }
+ }
+
+interface Room {
+    type: 'private' | 'shared';
+    length: number;
+    width: number;
+    daysLeft: number;
+    available: boolean;
+}
+
+class PetHotel {
+    private rooms: Room[] = [];
+    private rating: number = 0;
+
+    constructor(public name: string) { }
+
+    /**
+     * Adds a room to the list of rooms.
+     *
+     * @param {'private' | 'shared'} type - The type of the room (private or shared).
+     * @param {number} length - The length of the room.
+     * @param {number} width - The width of the room.
+     * @return {void} This function does not return anything.
+     */
+    addRoom(type: 'private' | 'shared', length: number, width: number): void {
+        this.rooms.push({ type, length, width, daysLeft: 0, available: true });
+    }
+
+    /**
+     * Retrieves the list of rooms.
+     *
+     * @return {Room[]} The list of rooms.
+     */
+    getRooms(): Room[] {
+        return this.rooms;
+    }
+
+    /**
+     * Retrieves the rating value.
+     *
+     * @return {number} The rating value.
+     */
+    getRating(): number {
+        return this.rating;
+    }
+
+    /**
+     * Registers a pet in a suitable room based on the requested type, availability, and minimum size.
+     *
+     * @param {Pet} pet - The pet to be registered.
+     * @param {'private' | 'shared'} type - The type of room requested.
+     * @param {number} days - The number of days the pet will stay in the room.
+     * @param {number} minSize - The minimum size required for the room.
+     * @return {Room | undefined} The room assigned to the pet, or undefined if no suitable room is available.
+     */
+    registerPet(pet: Pet, type: 'private' | 'shared', days: number, minSize: number): Room | undefined {
+        // Find a suitable room for the pet based on the requested type, availability, and minimum size
+        const room = this.rooms.find(r => r.type === type && r.available && r.length * r.width >= minSize);
+
+        if (!room) {
+            console.log(`No ${type} rooms available for ${pet.name} with minimum size of ${minSize}.`);
+            return;
+        }
+
+        // Assign the room to the pet for the specified number of days
+        room.daysLeft = days;
+        room.available = false;
+
+        return room;
+    }
+
+    /**
+     * Display the hotel information.
+     *
+     * This function logs the hotel name, rating, and room details to the console.
+     * It uses the `name` and `rating` properties of the hotel object, and the `rooms` array
+     * to display the room type and dimensions.
+     *
+     * @return {void} This function does not return any value.
+     */
+    displayHotelInfo(): void {
+        console.log(`Pet Hotel: ${this.name}`);
+        console.log(`Rating: ${this.rating} stars`);
+        console.log('Rooms:');
+        this.rooms.forEach((room, index) => {
+            console.log(`Room ${index + 1} - Type: ${room.type}, Dimensions: ${room.length}x${room.width}`);
+        });
+    }
+    
+    bookOutHotel(): number {
+        let reservedCount = 0;
+        for (const room of this.rooms) {
+            if (room.available) {
+                room.daysLeft = 1;
+                room.available = false;
+                reservedCount++;
+            }
+        }
+        return reservedCount;
+    }
+}
