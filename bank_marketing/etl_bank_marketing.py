@@ -20,6 +20,7 @@ def convert_df_for_mysql(df):
     categories = {
         'job': ['admin.', 'blue-collar', 'entrepreneur', 'housemaid', 'management', 'retired', 'self-employed', 'services', 'student', 'technician', 'unemployed', 'unknown'],
         'marital': ['divorced', 'married', 'single', 'unknown'],
+        'education': ['primary', 'secondary', 'tertiary', 'basic.4y', 'basic.6y', 'basic.9y', 'high.school', 'illiterate', 'professional.course', 'university.degree', 'unknown'],
         'default': ['no', 'yes', 'unknown'],
         'housing': ['no', 'yes', 'unknown'],
         'loan': ['no', 'yes', 'unknown'],
@@ -30,9 +31,13 @@ def convert_df_for_mysql(df):
     }
 
     for col, cats in categories.items():
+        df[col] = df[col].replace('', 'unknown')
+        df[col] = df[col].replace('other', 'unknown')
+        df[col] = df[col].fillna('unknown')
         df[col] = pd.Categorical(df[col], categories=cats, ordered=False)
 
     # Ensure 'balance' is float32 for MySQL FLOAT compatibility
+    df['balance'] = df['balance'].fillna(0)
     df['balance'] = df['balance'].astype('float32')
 
     # Convert duration, campaign, pdays, previous to int32 for MySQL INT compatibility
@@ -98,12 +103,7 @@ union_df = pd.concat([df_nonadditional, df_additional], ignore_index=True)
 # Remove duplicates on merged dataframe
 df = union_df.drop_duplicates()
 
-# Replace Nan Balance with 0
-df['balance'] = df['balance'].fillna(0)
-# Replace 'other' with 'unknown for poutomc column
-df['poutcome'] = df['poutcome'].replace('other', 'unknown')
-
-# Assuming you have your DataFrame named 'df'
+# Convert dft to be ready for mySQL insertion
 df_ready = convert_df_for_mysql(df)
 column_order = [
     'customer_id', 'age', 'job', 'marital', 'education', 'default_credit', 'balance', 'housing', 'loan', 'contact', 'month', 
@@ -123,7 +123,7 @@ CREATE TABLE BM_FactCustomers (
     age INT COMMENT 'Age in years',
     job ENUM('admin.', 'blue-collar', 'entrepreneur', 'housemaid', 'management', 'retired', 'self-employed', 'services', 'student', 'technician', 'unemployed', 'unknown') COMMENT 'Type of job',
     marital ENUM('divorced', 'married', 'single', 'unknown') COMMENT 'Marital status',
-    education VARCHAR(300) COMMENT 'Education level',
+    education ENUM('primary', 'secondary', 'tertiary', 'basic.4y', 'basic.6y', 'basic.9y', 'high.school', 'illiterate', 'professional.course', 'university.degree', 'unknown') COMMENT 'Education level',
     default_credit ENUM('no', 'yes', 'unknown') COMMENT 'Does customer have credit in default?',
     balance FLOAT COMMENT 'Balance amount in Euros',
     housing ENUM('no', 'yes', 'unknown') COMMENT 'Does customer have housing loan?',

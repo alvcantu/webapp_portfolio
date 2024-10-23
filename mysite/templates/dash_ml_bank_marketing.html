@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alvaro's ML Predictions Dashboard</title>
+  <!-- Favicon and touch icons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
+  <link rel="mask-icon" href="{{ url_for('static', filename='safari-pinned-tab.svg') }}" color="#638e1f">
+  <!-- Meta tags -->
+  <meta name="apple-mobile-web-app-title" content="Alvaro's App">
+  <meta name="application-name" content="Alvaro's App">
+  <meta name="msapplication-TileColor" content="#b79841">
+  <meta name="theme-color" content="#ffffff">
+  <!-- References CSS styling -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <!-- Menu toggle button -->
+  <button class="menu-toggle">☰</button>
+  <nav class="sidebar">
+    <ul>
+      <li><a href="/" class="mainmenu-button">Main page</a></li>
+      <li><a href="/dash_self_service" class="standard-button">Data 'Google'</a></li>
+      <li><a href="/dash_ml_models_online_retail" class="standard-button">Predict sales dashboard</a></li>
+      <li><a href="/dash_southpark" class="standard-button">South Park data dashboard</a></li>
+      <li><a href="/dash_stocks" class="standard-button">Stocks data dashboard</a></li>
+      <li><a href="{{ url_for('static', filename='presentation.pdf') }}" class="standard-button">Auto-generated presentation</a></li>
+      <li><a href="/documentation#database-online_retail" class="documentation-button">How data model was created</a></li>
+      <li><a href="/documentation#app" class="documentation-button">How this app was created</a></li>
+      <li><a href="https://github.com/alvcantu/coursera_portfolio" class="weblink-button">Data analysis repository</a></li>
+      <li><a href="{{ url_for('static', filename='AlvaroCantuCV.pdf') }}" class="weblink-button">My CV/Resume</a></li>
+      <li><a href="https://www.linkedin.com/in/alvcantu/" class="weblink-button">My LinkedIn</a></li>
+    </ul>
+  </nav>
+
+  <!-- References shared app Javascript logic -->
+  <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+
+  <!-- Titles -->
+  <h1>Predict Bank Marketing Dashboard (WIP)</h1>
+  <h2>You are a call center worker talking with a customer, enter their details below to predict with an XGBoost classification machine learning model if the client will subscribe to a term deposit.</h2>
+
+  <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExcW85YnF1a2JodjJ0cG85ZTExOTF1OGxzYXV1bzQ0ODVxNjE5aHI3dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3rgXBBaVvhPXk3NSnK/giphy.webp" alt="Customer Service GIF">
+  <!-- Input form -->
+  <form action="/submit" method="post">
+    <label for="age">Age in years:</label>
+    <input type="number" id="age" name="age" min="0" required><br><br>
+
+    <label for="job">Type of job:</label>
+    <select id="job" name="job" required>
+        <option value="admin.">admin.</option>
+        <option value="blue-collar">blue-collar</option>
+        <option value="entrepreneur">entrepreneur</option>
+        <option value="housemaid">housemaid</option>
+        <option value="management">management</option>
+        <option value="retired">retired</option>
+        <option value="self-employed">self-employed</option>
+        <option value="services">services</option>
+        <option value="student">student</option>
+        <option value="technician">technician</option>
+        <option value="unemployed">unemployed</option>
+        <option value="unknown">unknown</option>
+    </select><br><br>
+
+    <label for="marital">Marital status:</label>
+    <select id="marital" name="marital" required>
+        <option value="divorced">divorced</option>
+        <option value="married">married</option>
+        <option value="single">single</option>
+        <option value="unknown">unknown</option>
+    </select><br><br>
+
+    <label for="education">Education level:</label>
+    <select id="education" name="education" required>
+        <option value="basic.4y">basic.4y</option>
+        <option value="basic.6y">basic.6y</option>
+        <option value="basic.9y">basic.9y</option>
+        <option value="high.school">high.school</option>
+        <option value="illiterate">illiterate</option>
+        <option value="professional.course">professional.course</option>
+        <option value="university.degree">university.degree</option>
+        <option value="unknown">unknown</option>
+    </select><br><br>
+
+    <label for="default_credit">Does customer have credit in default?:</label>
+    <select id="default_credit" name="default_credit" required>
+        <option value="no">No</option>
+        <option value="yes">Yes</option>
+        <option value="unknown">Unknown</option>
+    </select><br><br>
+
+    <label for="balance">Balance amount in euros:</label>
+    <input type="number" step="0.01" id="balance" name="balance" required><br><br>
+
+    <label for="housing">Does customer have housing loan?:</label>
+    <select id="housing" name="housing" required>
+        <option value="no">No</option>
+        <option value="yes">Yes</option>
+        <option value="unknown">Unknown</option>
+    </select><br><br>
+
+    <label for="loan">Does customer have personal loan?:</label>
+    <select id="loan" name="loan" required>
+        <option value="no">No</option>
+        <option value="yes">Yes</option>
+        <option value="unknown">Unknown</option>
+    </select><br><br>
+
+    <label for="contact">Contact communication type:</label>
+    <select id="contact" name="contact" required>
+        <option value="cellular">Cellular</option>
+        <option value="telephone">Telephone</option>
+        <option value="unknown">Unknown</option>
+    </select><br><br>
+
+    <label for="month">Last contact month:</label>
+    <select id="month" name="month" required>
+        <option value="jan">Jan</option>
+        <option value="feb">Feb</option>
+        <option value="mar">Mar</option>
+        <option value="apr">Apr</option>
+        <option value="may">May</option>
+        <option value="jun">Jun</option>
+        <option value="jul">Jul</option>
+        <option value="aug">Aug</option>
+        <option value="sep">Sep</option>
+        <option value="oct">Oct</option>
+        <option value="nov">Nov</option>
+        <option value="dec">Dec</option>
+    </select><br><br>
+
+    <label for="campaign">Number of contacts performed during this campaign and for this client:</label>
+    <input type="number" id="campaign" name="campaign" min="0" required><br><br>
+
+    <label for="pdays">Number of days that passed by after the client was last contacted from a previous campaign:</label>
+    <input type="number" step="0.01" id="pdays" name="pdays" required><br><br>
+
+    <label for="previous">'Number of contacts performed before this campaign and for this client:</label>
+    <input type="number" id="previous" name="previous" min="0" required><br><br>
+
+    <label for="poutcome">Outcome of the previous marketing campaign:</label>
+    <select id="poutcome" name="poutcome" required>
+        <option value="failure">Failure</option>
+        <option value="nonexistent">Nonexistent</option>
+        <option value="success">Success</option>
+        <option value="unknown">Unknown</option>
+    </select><br><br>
+
+    <input type="submit" value="Submit">
+  </form>
+
+</body>
+</html>

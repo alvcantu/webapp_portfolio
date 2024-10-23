@@ -6,6 +6,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from bayes_opt import BayesianOptimization
+from xgboost import XGBClassifier
 
 
 # Connect to MySQL database
@@ -93,7 +94,7 @@ X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=
 
 # Define the Bayesian optimization function
 def xgb_bayes_opt(max_depth, learning_rate, n_estimators, gamma, min_child_weight, subsample, colsample_bytree, reg_alpha, reg_lambda):
-    xgb_class = xgb.XGBClassifier(objective='binary:logistic', max_depth=int(max_depth), learning_rate=learning_rate, n_estimators=int(n_estimators), gamma=gamma, min_child_weight=min_child_weight, subsample=subsample, colsample_bytree=colsample_bytree, reg_alpha=reg_alpha, reg_lambda=reg_lambda, n_jobs=-1)
+    xgb_class = XGBClassifier(objective='binary:logistic', max_depth=int(max_depth), learning_rate=learning_rate, n_estimators=int(n_estimators), gamma=gamma, min_child_weight=min_child_weight, subsample=subsample, colsample_bytree=colsample_bytree, reg_alpha=reg_alpha, reg_lambda=reg_lambda, n_jobs=-1)
     xgb_class.fit(X_train, y_train)
     y_pred = xgb_class.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
@@ -136,4 +137,4 @@ with open('accuracy_ml_model_classification_bank_marketing.txt', 'w') as f:
     f.write(str(accuracy))
 
 # Save the model
-xgb_class.save_model('ml_model_classification_bank_marketing.json')
+xgb_class.get_booster().save_model('ml_model_classification_bank_marketing.json')

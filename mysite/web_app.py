@@ -309,6 +309,10 @@ def dash_self_service():
                            user_query=user_query,
                            data_output=data_output)
 
+@app.route('/dash_ml_bank_marketing', methods=['GET', 'POST'])
+def dash_ml_bank_marketing():
+    return render_template('dash_ml_bank_marketing.html')
+
 @app.route('/dash_ml_models_online_retail', methods=['GET', 'POST'])
 def dash_ml_models_online_retail():
     # Define metrics and get selected performance measure
