@@ -78,7 +78,7 @@
         <div style="text-align: center;">
           <a href=${data.pdf_url} target="_blank">Download daily generated PDF</a>
         </div>
-        <h2>${data.name}</h2>
+        <h2 style="width: 100%;">${data.name}</h2>
         <p>Country: ${data.country}</p>
         <p>Website: ${data.website}</p>
         <p>Industry: ${data.industry}</p>
@@ -126,6 +126,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           scales: {
             x: {
               type: 'time',

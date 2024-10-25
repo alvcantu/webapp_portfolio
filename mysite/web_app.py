@@ -112,8 +112,8 @@ def prepare_data_for_chart(sql_query):
     return {
         "labels": labels if labels else [],
         "datasets": datasets if datasets else [],
-        "xAxisLabels": dimensions if dimensions else "No data",
-        "yAxisLabels": measures if measures else "No data"
+        "xAxisLabels": dimensions if dimensions else [],
+        "yAxisLabels": measures if measures else []
     }
 
 # Function to load the mappings into dictionaries
@@ -279,7 +279,7 @@ def dash_self_service():
         data = {
             "model": "openrouter/auto",  # You can change this to another model if needed
             "messages": [
-                {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to executed. Do not join tables without relationhips present in the schema. Do not use datepart functions."},
+                {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to executed. Do not join tables that do not start with the same two letters."},
                 {"role": "user", "content": prompt}
             ]
         }
@@ -311,6 +311,65 @@ def dash_self_service():
 
 @app.route('/dash_ml_bank_marketing', methods=['GET', 'POST'])
 def dash_ml_bank_marketing():
+    # sql_query_extract = '''
+    # SELECT * FROM BM_FactCustomers LIMIT 1;
+    # '''
+
+    # # Fetch data
+    # mydb, cursor = get_db_connection()
+    # cursor.execute(sql_query_extract)
+    # data = cursor.fetchall()
+    # columns = [i[0] for i in cursor.description]  # Get column names
+
+    # # Convert to DataFrame
+    # df = pd.DataFrame(data, columns=columns)
+
+    # # Only extract the needed features
+    # features = df.drop(columns=['subscribed_y', 'duration','customer_id'])
+
+    # # Values to inserted in dataframe, will come fron front-end in the future.
+    # user_input = {
+    #     'age': request.form.get('age'), 
+    #     'job': request.form.get('job'),  
+    #     'marital': request.form.get('marital'),  
+    #     'education': request.form.get('education'),  
+    #     'default_credit': request.form.get('default_credit'),  # Has credit in default?
+    #     'balance': request.form.get('balance'),  # Account balance
+    #     'housing': request.form.get('housing'),  # Has housing loan?
+    #     'loan': request.form.get('loan'),  # Has personal loan?
+    #     'contact': request.form.get('contact'),  # Contact communication type
+    #     'month': request.form.get('month'),  # Last contact month of year
+    #     'campaign': request.form.get('campaign'),  # Number of contacts performed during this campaign and for this client
+    #     'pdays': request.form.get('pdays'),  # Number of days that passed by after the client was last contacted from a previous campaign (999 means client was not previously contacted)
+    #     'previous': request.form.get('previous'),  # Number of contacts performed before this campaign and for this client
+    #     'poutcome': request.form.get('poutcome')  # Outcome of the previous marketing campaign
+    # }
+
+    # # adding user_input
+    # features.loc[0] = pd.Series(user_input)
+
+    # # Convert ENUM and other categorical data to category type for better memory usage and performance
+    # for col in features.columns:
+    #     if features[col].dtype == 'object':  # This will catch both ENUM and VARCHAR
+    #         features[col] = features[col].astype('category')
+
+    # # Encode categorical variables
+    # le = LabelEncoder()
+    # for column in features.select_dtypes(include=['category', 'object']):
+    #     features[column] = le.fit_transform(features[column])
+
+    # # Import the model
+    # model = xgb.XGBRegressor()
+    # model.load_model('bank_marketing/ml_model_classification_bank_marketing.json')
+
+    # Apply the model to the data
+    # X = df[features]
+    # predictions = model.predict(X)
+    # predictions = 0
+
+    # # Convert predictions to a DataFrame if it's not already one
+    # final_prediction = 'yes' if predictions[0] == 1 else 'no'
+
     return render_template('dash_ml_bank_marketing.html')
 
 @app.route('/dash_ml_models_online_retail', methods=['GET', 'POST'])

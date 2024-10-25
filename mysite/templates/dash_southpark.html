@@ -138,17 +138,17 @@
   <!-- Character info section -->
   <div id="character-info" style="margin-top: 20px; text-align: center; width: 80%">
     <hr id="top-line" style="border: 2px solid; width: 100%;">
-    <h2 id="character-name" style="color: white;">{{ selected_character }}</h2>
+    <h2 id="character-name" style="color: white; width: 100%">{{ selected_character }}</h2>
     <p id="character-role" style="color: white;">{{ character_role[0][0] if character_role else 'Role not specified' }}</p>
     <hr id="bottom-line" style="border: 2px solid; width: 100%;">
   </div>
 
   <!-- Charts section -->
   <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-    <div style="width: 80%; margin-bottom: 10vh;">
+    <div style="width: 80%; margin-bottom: 10vh; height: 400px;">
       <canvas id="appearancesPerSeasonChart"></canvas>
     </div>
-    <div style="width: 80%; margin-bottom: 10vh;">
+    <div style="width: 80%; margin-bottom: 10vh; height: 400px">
       <canvas id="appearsWithChart"></canvas>
     </div>
   </div>
@@ -198,7 +198,6 @@
         }]
       },
       options: {
-        responsive: true,
         layout: {
           padding: {
             top: 50,  // Further increased top padding to push content down more
@@ -222,8 +221,7 @@
           datalabels: {
             color: 'white',
             anchor: 'end',
-            align: 'end',
-            offset: 10,  // Increased offset to push the labels further inward from the bar's end
+            align: 'start',
             font: {
               size: 12
             }
@@ -242,7 +240,9 @@
           y: {
             display: false
           }
-        }
+        },
+        responsive: true,
+        maintainAspectRatio: false
       },
       plugins: [ChartDataLabels]
     });
@@ -293,7 +293,7 @@
             datalabels: {
               color: 'white',
               anchor: 'end',
-              align: 'end',
+              align: 'start',
               font: {
                 size: 12
               }
@@ -308,7 +308,9 @@
               ticks: { color: 'white' },
               grid: { display: false }
             }
-          }
+          },
+          responsive: true,
+          maintainAspectRatio: false
         },
         plugins: [ChartDataLabels]
       });

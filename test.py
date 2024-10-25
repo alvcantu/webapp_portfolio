@@ -60,48 +60,25 @@ for col in features.columns:
     if features[col].dtype == 'object':  # This will catch both ENUM and VARCHAR
         features[col] = features[col].astype('category')
 
-#  Encodes categorical columns in the dataframe either using LabelEncoder or One-Hot Encoding.
-def encode_categorical_columns(df, encoding_type='label'):
-    # Make a copy of the dataframe to avoid modifying the original
-    df_encoded = df.copy()
-    
-    # Get the list of categorical columns
-    categorical_columns = df_encoded.select_dtypes(include=['category', 'object']).columns
-    
-    # Loop through each categorical column and encode it
-    if encoding_type == 'label':
-        # Label Encoding (converts categories to integers)
-        le = LabelEncoder()
-        for column in categorical_columns:
-            df_encoded[column] = le.fit_transform(df_encoded[column])
-    
-    elif encoding_type == 'onehot':
-        # One-Hot Encoding (converts categories to binary columns)
-        df_encoded = pd.get_dummies(df_encoded, columns=categorical_columns)
-    
-    else:
-        raise ValueError("Invalid encoding_type. Choose 'label' or 'onehot'.")
-    
-    return df_encoded
-
 # Encode categorical variables
-# le = LabelEncoder()
-# for column in features.select_dtypes(include=['category', 'object']):
-#     features[column] = le.fit_transform(features[column])
+le = LabelEncoder()
+for column in features.select_dtypes(include=['category', 'object']):
+    features[column] = le.fit_transform(features[column])
+
+print(features.head())
 
 # # Import the model
 # model = xgb.XGBRegressor()
 # model.load_model('bank_marketing/ml_model_classification_bank_marketing.json')
 
-# Apply the model to the data
+# # Apply the model to the data
 # X = df[features]
 # predictions = model.predict(X)
-predictions = 0
+# predictions = 0
 
-# Convert predictions to a DataFrame if it's not already one
-final_prediction = 'yes' if predictions[0] == 1 else 'no'
+# # Convert predictions to a DataFrame if it's not already one
+# final_prediction = 'yes' if predictions[0] == 1 else 'no'
 
-print(features.head())
-print(final_prediction)
+
 
 

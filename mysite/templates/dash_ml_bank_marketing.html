@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Alvaro's ML Predictions Dashboard</title>
+  <title>Alvaro's Predicting Bank Marketing Dashboard</title>
   <!-- Favicon and touch icons -->
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
@@ -29,7 +29,7 @@
       <li><a href="/dash_southpark" class="standard-button">South Park data dashboard</a></li>
       <li><a href="/dash_stocks" class="standard-button">Stocks data dashboard</a></li>
       <li><a href="{{ url_for('static', filename='presentation.pdf') }}" class="standard-button">Auto-generated presentation</a></li>
-      <li><a href="/documentation#database-online_retail" class="documentation-button">How data model was created</a></li>
+      <li><a href="/documentation#database-bank_marketing" class="documentation-button">How data model was created</a></li>
       <li><a href="/documentation#app" class="documentation-button">How this app was created</a></li>
       <li><a href="https://github.com/alvcantu/coursera_portfolio" class="weblink-button">Data analysis repository</a></li>
       <li><a href="{{ url_for('static', filename='AlvaroCantuCV.pdf') }}" class="weblink-button">My CV/Resume</a></li>
@@ -76,9 +76,9 @@
 
     <label for="education">Education level:</label>
     <select id="education" name="education" required>
-        <option value="basic.4y">basic.4y</option>
-        <option value="basic.6y">basic.6y</option>
-        <option value="basic.9y">basic.9y</option>
+        <option value="primary">primary</option>
+        <option value="secondary">secondary</option>
+        <option value="tertiary">tertiary</option>
         <option value="high.school">high.school</option>
         <option value="illiterate">illiterate</option>
         <option value="professional.course">professional.course</option>

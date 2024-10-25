@@ -20,7 +20,7 @@ def convert_df_for_mysql(df):
     categories = {
         'job': ['admin.', 'blue-collar', 'entrepreneur', 'housemaid', 'management', 'retired', 'self-employed', 'services', 'student', 'technician', 'unemployed', 'unknown'],
         'marital': ['divorced', 'married', 'single', 'unknown'],
-        'education': ['primary', 'secondary', 'tertiary', 'basic.4y', 'basic.6y', 'basic.9y', 'high.school', 'illiterate', 'professional.course', 'university.degree', 'unknown'],
+        'education': ['primary', 'secondary', 'tertiary', 'high.school', 'illiterate', 'professional.course', 'university.degree', 'unknown'],
         'default': ['no', 'yes', 'unknown'],
         'housing': ['no', 'yes', 'unknown'],
         'loan': ['no', 'yes', 'unknown'],
@@ -31,9 +31,14 @@ def convert_df_for_mysql(df):
     }
 
     for col, cats in categories.items():
+        # Replace known odd values with unknown for consistency
         df[col] = df[col].replace('', 'unknown')
         df[col] = df[col].replace('other', 'unknown')
         df[col] = df[col].fillna('unknown')
+        # Replace education levels so data is consistent
+        df[col] = df[col].replace('basic.4y', 'primary') 
+        df[col] = df[col].replace('basic.6y', 'secondary')
+        df[col] = df[col].replace('basic.9y', 'tertiary')
         df[col] = pd.Categorical(df[col], categories=cats, ordered=False)
 
     # Ensure 'balance' is float32 for MySQL FLOAT compatibility
@@ -123,7 +128,7 @@ CREATE TABLE BM_FactCustomers (
     age INT COMMENT 'Age in years',
     job ENUM('admin.', 'blue-collar', 'entrepreneur', 'housemaid', 'management', 'retired', 'self-employed', 'services', 'student', 'technician', 'unemployed', 'unknown') COMMENT 'Type of job',
     marital ENUM('divorced', 'married', 'single', 'unknown') COMMENT 'Marital status',
-    education ENUM('primary', 'secondary', 'tertiary', 'basic.4y', 'basic.6y', 'basic.9y', 'high.school', 'illiterate', 'professional.course', 'university.degree', 'unknown') COMMENT 'Education level',
+    education ENUM('primary', 'secondary', 'tertiary', 'high.school', 'illiterate', 'professional.course', 'university.degree', 'unknown') COMMENT 'Education level',
     default_credit ENUM('no', 'yes', 'unknown') COMMENT 'Does customer have credit in default?',
     balance FLOAT COMMENT 'Balance amount in Euros',
     housing ENUM('no', 'yes', 'unknown') COMMENT 'Does customer have housing loan?',

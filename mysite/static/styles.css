@@ -29,6 +29,14 @@ h2 {
   width: 80%;
 }
 
+h3 {
+  text-align: center;
+  width: 80%;
+}
+h4 {
+  width: 80%;
+}
+
 p {
     font-size: 1.2rem;
 }
@@ -312,6 +320,14 @@ select option {
     background-color: rgba(0,0,0,0.5);
     z-index: 9998;
 }
+/* Media query for mobile devices */
+@media (max-width: 600px) {
+  .popup {
+      width: 90%; /* Increase width for mobile */
+      padding: 15px; /* Adjust padding for smaller screens */
+  }
+}
+
 /* Added CSS for pre and code elements */
 .bot-message pre, .bot-message code {
     white-space: pre-wrap; /* Ensures the text wraps */
@@ -434,10 +450,10 @@ select option {
   background-color: #3c3c3c !important;
 }
 
-/* Responsive styles for self-service chart */
-#self-service-chart {
-  width: 90% !important;
-  margin: auto; /* This centers the canvas if you want */
+/* Make chart.js canvas responsive to setting above */
+canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* Styles for accordions */

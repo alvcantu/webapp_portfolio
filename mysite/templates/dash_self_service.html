@@ -32,6 +32,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.1/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.2.1/chartjs-plugin-zoom.min.js"></script> 
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 </head>
 <body>
 
@@ -128,7 +129,9 @@
     {% else %}
     <!--Chart.js-->
         <h3>{{ user_query }}</h3>
-        <canvas id="self-service-chart"></canvas>
+        <div style="width: 80%; height:400px;">
+            <canvas id="self-service-chart"></canvas>
+        </div>
         <script>
             var ctx = document.getElementById('self-service-chart').getContext('2d');
             var chartData = {{ data_output | tojson }};
@@ -156,10 +159,20 @@
             }
 
             var chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         labels: {
                             color: 'white'
+                        }
+                    },
+                    datalabels: {
+                        color: 'white',
+                        anchor: 'end',
+                        align: 'start',
+                        font: {
+                            size: 12
                         }
                     }
                 },
@@ -201,7 +214,8 @@
             var chart = new Chart(ctx, {
                 type: chartType,
                 data: chartData,
-                options: chartOptions
+                options: chartOptions,
+                plugins: [ChartDataLabels] // Include the Data Labels plugin in the chart
             });
         </script>       
     {% endif %}

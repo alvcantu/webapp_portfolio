@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Alvaro's ML Predictions Dashboard</title>
+  <title>Alvaro's Predicting Sales Dashboard</title>
   <!-- Favicon and touch icons -->
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
@@ -49,11 +49,11 @@
   <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 
   <!-- Titles -->
-  <h1>Predict sales dashboard</h1>
-  <h2>Predicting sales for an online retail business using historical transaction data with XGBoost machine learning regression algorithm.</h2>
+  <h1>Predicting Sales Dashboard</h1>
+  <h2>Utilize historical transaction data to predict future sales for an online retail business using XGBoost machine learning regression algorithm</h2>
 
   <h3>Select a model to view its description and my approach to the problem.</h3>
-  <p font-size=12px style="width: 80%;">I chose XGBoost for all models because of its high performance and changed the feature engineering for each attempt at predicting sales. The algorithm works by building decision trees (i.e. a series of questions that lead to the optimal prediction by reducing the difference between actual values and predicted values, or the residuals) sequentially. It tests the performance on one tree and then based off the reduced residuals creates an improved one, 'gradient boosting' in fancy terminology. But given XGBoost is EXTREME gradient boosting, it calculates its trees in a unique way by figuring out where is best to split the data to reduce the residuals. In the case of InvoiceDate, it smartly determines whether 'Is the day before or after Thursday?' OR 'Is the day before or after FRIDAY?' is a better question for splitting the tree by testing each of these scenarios out. It’s like a team of weak students, each correcting the mistakes of the previous one, gradually improving their collective score to become top performers, each 'student' here being a decision tree. Eventually after many different combinations it picks the most helpful questions that reduce the residuals the most, hence leading to the most accurate prediction.</p>
+  <p font-size=11px style="width: 80%;">XGBoost builds decision trees sequentially to minimize prediction errors (residuals). It refines each tree based on the residuals from the previous one, a process called "gradient boosting." As an "extreme" version, XGBoost optimizes tree splits by testing various scenarios to find the most effective question, such as whether a date is before or after specific days like Thursday or Friday. This is like a team of weak students, each correcting the previous one’s mistakes to collectively improve their score, ultimately leading to highly accurate predictions.</p>
   <!--Transactions model-->
   <button class="accordion">Predicting transactions per day</button>
   <div class="panel">
@@ -171,13 +171,10 @@
                 },
                 datalabels: {
                     anchor: 'end',
-                    align: 'end',
+                    align: 'start',
                     color: 'white', // Color of the data labels
                     font: {
-                    size: 12
-                    },
-                    formatter: (value, ctx) => {
-                        return value; // Display the value at the end of each bar
+                        size: 12
                     }
                 }
             },
@@ -244,7 +241,6 @@
                 datasets: datasets // Dynamic datasets
             },
             options: {
-                responsive: true,
                 plugins: {
                     legend: {
                         display: true,
@@ -283,6 +279,8 @@
                 },
                 backgroundColor: 'transparent', // Transparent background
                 spangaps: false,
+                responsive: true,
+                maintainAspectRatio: false
             }
         });
     });

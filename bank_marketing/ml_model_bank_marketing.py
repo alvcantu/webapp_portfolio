@@ -50,40 +50,6 @@ for col in df.columns:
 features = df.drop(columns=['subscribed_y', 'duration','customer_id'])
 target = df['subscribed_y']
 
-
-def encode_categorical_columns(df, encoding_type='label'):
-    """
-    Encodes categorical columns in the dataframe either using LabelEncoder or One-Hot Encoding.
-
-    Parameters:
-    df (pd.DataFrame): The dataframe containing the features.
-    encoding_type (str): The type of encoding to apply ('label' for LabelEncoder, 'onehot' for One-Hot Encoding).
-
-    Returns:
-    pd.DataFrame: The dataframe with encoded categorical columns.
-    """
-    # Make a copy of the dataframe to avoid modifying the original
-    df_encoded = df.copy()
-    
-    # Get the list of categorical columns
-    categorical_columns = df_encoded.select_dtypes(include=['category', 'object']).columns
-    
-    # Loop through each categorical column and encode it
-    if encoding_type == 'label':
-        # Label Encoding (converts categories to integers)
-        le = LabelEncoder()
-        for column in categorical_columns:
-            df_encoded[column] = le.fit_transform(df_encoded[column])
-    
-    elif encoding_type == 'onehot':
-        # One-Hot Encoding (converts categories to binary columns)
-        df_encoded = pd.get_dummies(df_encoded, columns=categorical_columns)
-    
-    else:
-        raise ValueError("Invalid encoding_type. Choose 'label' or 'onehot'.")
-    
-    return df_encoded
-
 # Encode categorical variables
 le = LabelEncoder()
 for column in features.select_dtypes(include=['category', 'object']):
@@ -117,24 +83,17 @@ bounds = {
 optimizer = BayesianOptimization(f=xgb_bayes_opt, pbounds=bounds, random_state=42)
 
 # Perform the optimization
-optimizer.maximize(init_points=5, n_iter=40)
+optimizer.maximize(init_points=5, n_iter=1)
 
 # Print the optimized hyperparameters
 print(optimizer.max)
 
 # Train the XGBoost classifier with the optimized hyperparameters
-xgb_class = xgb.XGBClassifier(objective='binary:logistic', **optimizer.max['params'])
+xgb_class = XGBClassifier(objective='binary:logistic', **optimizer.max['params'])
 xgb_class.fit(X_train, y_train)
 
 # Make predictions
 y_pred = xgb_class.predict(X_test)
-
-# Evaluate the model
-accuracy = accuracy_score(y_test, y_pred)
-
-# Save accuracy
-with open('accuracy_ml_model_classification_bank_marketing.txt', 'w') as f:
-    f.write(str(accuracy))
 
 # Save the model
 xgb_class.get_booster().save_model('ml_model_classification_bank_marketing.json')
