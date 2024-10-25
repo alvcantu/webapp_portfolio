@@ -1,12 +1,12 @@
-import pandas as pd
-import numpy as np
 import mysql.connector
 from mysql.connector import Error
-from sklearn.preprocessing import LabelEncoder
+import pandas as pd
+import numpy as json
+import xgboost as xgb
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.preprocessing import LabelEncoder
 from bayes_opt import BayesianOptimization
-from xgboost import XGBClassifier
+import json
 
 
 # Connect to MySQL database
@@ -47,53 +47,76 @@ for col in df.columns:
 # Thus, this input should only be included for benchmark purposes and
 # should be discarded if the intention is to have a realistic
 # predictive model.
-features = df.drop(columns=['subscribed_y', 'duration','customer_id'])
+
+# Assuming 'df' is already loaded with your data
+
+# Define features and target
+features = df.drop(columns=['subscribed_y', 'duration', 'customer_id'])
 target = df['subscribed_y']
 
 # Encode categorical variables
-le = LabelEncoder()
-for column in features.select_dtypes(include=['category', 'object']):
+categorical_columns = features.select_dtypes(include=['object']).columns
+encoders = {}
+for column in categorical_columns:
+    le = LabelEncoder()
     features[column] = le.fit_transform(features[column])
+    encoders[column] = le.classes_
 
-# Set train and test data
+# Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
 
-# Define the Bayesian optimization function
-def xgb_bayes_opt(max_depth, learning_rate, n_estimators, gamma, min_child_weight, subsample, colsample_bytree, reg_alpha, reg_lambda):
-    xgb_class = XGBClassifier(objective='binary:logistic', max_depth=int(max_depth), learning_rate=learning_rate, n_estimators=int(n_estimators), gamma=gamma, min_child_weight=min_child_weight, subsample=subsample, colsample_bytree=colsample_bytree, reg_alpha=reg_alpha, reg_lambda=reg_lambda, n_jobs=-1)
-    xgb_class.fit(X_train, y_train)
-    y_pred = xgb_class.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    return -accuracy  # Note the minus sign to convert to minimization problem
+# Initialize XGBoost model
+dtrain = xgb.DMatrix(X_train, label=y_train)
+dtest = xgb.DMatrix(X_test)
 
-# Define the bounds for the hyperparameters
-bounds = {
-    'max_depth': (3, 10),
-    'learning_rate': (0.01, 1),
-    'n_estimators': (50, 200),
-    'gamma': (0, 1),
-    'min_child_weight': (1, 10),
-    'subsample': (0.5, 1),
-    'colsample_bytree': (0.5, 1),
-    'reg_alpha': (0, 1),
-    'reg_lambda': (0, 1)
-}
+def xgb_evaluate(max_depth, gamma, colsample_bytree):
+    params = {
+        'objective': 'binary:logistic',
+        'eval_metric': 'logloss',
+        'max_depth': int(max_depth),
+        'subsample': 0.8,
+        'eta': 0.1,
+        'gamma': gamma,
+        'colsample_bytree': colsample_bytree,
+        'silent': 1
+    }
+    
+    cv_result = xgb.cv(params, dtrain, num_boost_round=100, nfold=5,
+                       metrics='auc', early_stopping_rounds=50, seed=42)
+    
+    return cv_result['test-auc-mean'].iloc[-1]
 
-# Initialize the Bayesian optimizer
-optimizer = BayesianOptimization(f=xgb_bayes_opt, pbounds=bounds, random_state=42)
+# Setting up the Bayesian Optimizer
+xgb_bo = BayesianOptimization(
+    xgb_evaluate, 
+    {'max_depth': (3, 10),
+     'gamma': (0, 5),
+     'colsample_bytree': (0.5, 1)}
+)
 
-# Perform the optimization
-optimizer.maximize(init_points=5, n_iter=1)
+# Optimize
+xgb_bo.maximize(init_points=5, n_iter=15)
 
-# Print the optimized hyperparameters
-print(optimizer.max)
+# Best parameters
+best_params = xgb_bo.max['params']
 
-# Train the XGBoost classifier with the optimized hyperparameters
-xgb_class = XGBClassifier(objective='binary:logistic', **optimizer.max['params'])
-xgb_class.fit(X_train, y_train)
+# Train the model with the best parameters
+best_params['max_depth'] = int(best_params['max_depth'])
+best_params['objective'] = 'binary:logistic'
+best_params['eval_metric'] = 'logloss'
+best_params['silent'] = 1
 
-# Make predictions
-y_pred = xgb_class.predict(X_test)
+model = xgb.train(best_params, dtrain, num_boost_round=100)
 
-# Save the model
-xgb_class.get_booster().save_model('ml_model_classification_bank_marketing.json')
+# Predict on test data
+preds = model.predict(dtest)
+predictions = [round(value) for value in preds]
+
+# Save model
+model.save_model('ml_model_bank_marketing.json')
+
+# Save encoders
+with open('encoders_ml_model_bank_marketing.json', 'w') as f:
+    json.dump(encoders, f)
+
+print("Model and Encoders saved.")
