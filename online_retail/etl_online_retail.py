@@ -2,8 +2,6 @@ import pandas as pd
 import numpy as np
 import mysql.connector
 from datetime import timedelta
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 # Load data into a DataFrame
 df = pd.read_csv('/home/alvcantu/online_retail/online_retail.csv')
@@ -102,6 +100,7 @@ def create_tables(cursor):
         Description TEXT COMMENT 'Description of the product',
         Quantity INT COMMENT 'Quantity of the product',
         UnitPrice DECIMAL(10, 2) COMMENT 'Unit price of the product',
+        Total_Actual_Sales DECIMAL(10, 2) COMMENT 'Total sales amount calculated as Quantity multiplied by Unit Price',
         FOREIGN KEY (InvoiceID) REFERENCES ONR_DimInvoice(InvoiceID)
     ) COMMENT='Fact table for transactions';
     """
@@ -158,6 +157,15 @@ def normalize_and_insert_data(df):
         mydb.commit()  # Commit after each chunk
 
     print("Data has been successfully inserted into the database in chunks.")
+
+    # Update Total_Actual_Sales column in ONR_FactTransactions
+    total_sales_sql = '''
+    UPDATE ONR_FactTransactions
+    SET Total_Actual_Sales = ROUND(Quantity * UnitPrice, 2);
+    '''
+    # Execute the SQL query
+    cursor.execute(total_sales_sql)
+    mydb.commit()
 
     cursor.close()
     mydb.close()

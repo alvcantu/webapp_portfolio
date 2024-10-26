@@ -22,19 +22,22 @@ h1, p, a {
 h1 {
   font-size: 2.25rem;
   padding-top: 1rem; /* Added top padding */
+  margin-left: auto;
+  margin-right: auto;
 }
 
 h2 {
   text-align: center;
   width: 80%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 h3 {
   text-align: center;
   width: 80%;
-}
-h4 {
-  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 p {

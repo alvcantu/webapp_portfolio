@@ -386,16 +386,16 @@ def dash_ml_models_online_retail():
     # Query actual sales data from database using a context manager for efficient connection handling
     sales_per_day_sql = '''
         SELECT
-            DATE(InvoiceDate) AS InvoiceDate,
-            SUM(Quantity * UnitPrice) AS Total_Actual_Sales
+            InvoiceDate,
+            SUM(Total_Actual_Sales) AS Total_Actual_Sales
         FROM
             ONR_DimInvoice AS inv
         JOIN
             ONR_FactTransactions AS trans ON inv.InvoiceID = trans.InvoiceID
         GROUP BY
-            DATE(InvoiceDate)
-        ORDER BY
             InvoiceDate
+        ORDER BY
+            InvoiceDate;
     '''
 
     # Connect to MySQL database

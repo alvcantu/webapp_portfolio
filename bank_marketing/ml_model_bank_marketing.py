@@ -66,8 +66,8 @@ for column in categorical_columns:
 X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
 
 # Initialize XGBoost model
-dtrain = xgb.DMatrix(X_train, label=y_train)
-dtest = xgb.DMatrix(X_test)
+dtrain = xgb.DMatrix(X_train, label=y_train, enable_categorical=True)
+dtest = xgb.DMatrix(X_test, enable_categorical=True)
 
 def xgb_evaluate(max_depth, gamma, colsample_bytree):
     params = {
