@@ -44,14 +44,27 @@
   <h1>Predict Bank Marketing Dashboard (WIP)</h1>
   <h2>You are a call center worker talking with a customer, enter their details below to predict with an XGBoost classification machine learning model if the client will subscribe to a term deposit.</h2>
 
-  <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExcW85YnF1a2JodjJ0cG85ZTExOTF1OGxzYXV1bzQ0ODVxNjE5aHI3dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3rgXBBaVvhPXk3NSnK/giphy.webp" alt="Customer Service GIF">
+  <!--If form is submitted, show prediction and customer determination-->
+  {% if prediction is defined and prediction != '' %}
+    <p>Predicted probability of subscribing:</p>
+    <p>{{ prediction }}</p>
+    <p>Follow up with customer:</p>
+    <p class="{% if customer_approval == 'Yes' %}green-flashy{% else %}red-negative{% endif %}">
+        {{ customer_approval }}
+    </p>
+    <img src="{% if customer_approval == 'Yes' %}{{ url_for('static', filename='approval_yes.webp') }}{% else %}{{ url_for('static', filename='approval_no.webp') }}{% endif %}" 
+         alt="Customer Approval Image" class="approval-image">
+    <p style="margin-top: 5vh;">Enter new details below:</p>
+  {% endif %}
+
   <!-- Input form -->
-  <form action="/submit" method="post">
+  <form id="filterForm" method="POST">
     <label for="age">Age in years:</label>
-    <input type="number" id="age" name="age" min="0" required><br><br>
+    <input type="number" id="age" name="age" min="0" step="1" required><br><br>
 
     <label for="job">Type of job:</label>
     <select id="job" name="job" required>
+        <option value="unknown">Unknown</option>
         <option value="admin.">admin.</option>
         <option value="blue-collar">blue-collar</option>
         <option value="entrepreneur">entrepreneur</option>
@@ -63,19 +76,19 @@
         <option value="student">student</option>
         <option value="technician">technician</option>
         <option value="unemployed">unemployed</option>
-        <option value="unknown">unknown</option>
     </select><br><br>
 
     <label for="marital">Marital status:</label>
     <select id="marital" name="marital" required>
+        <option value="unknown">unknown</option>
         <option value="divorced">divorced</option>
         <option value="married">married</option>
         <option value="single">single</option>
-        <option value="unknown">unknown</option>
     </select><br><br>
 
     <label for="education">Education level:</label>
     <select id="education" name="education" required>
+        <option value="unknown">Unknown</option>
         <option value="primary">primary</option>
         <option value="secondary">secondary</option>
         <option value="tertiary">tertiary</option>
@@ -83,38 +96,37 @@
         <option value="illiterate">illiterate</option>
         <option value="professional.course">professional.course</option>
         <option value="university.degree">university.degree</option>
-        <option value="unknown">unknown</option>
     </select><br><br>
 
     <label for="default_credit">Does customer have credit in default?:</label>
     <select id="default_credit" name="default_credit" required>
+        <option value="unknown">Unknown</option>
         <option value="no">No</option>
         <option value="yes">Yes</option>
-        <option value="unknown">Unknown</option>
     </select><br><br>
 
     <label for="balance">Balance amount in euros:</label>
-    <input type="number" step="0.01" id="balance" name="balance" required><br><br>
+    <input type="number" id="balance" name="balance" step="1" min="0" required><br><br>
 
     <label for="housing">Does customer have housing loan?:</label>
     <select id="housing" name="housing" required>
+        <option value="unknown">Unknown</option>
         <option value="no">No</option>
         <option value="yes">Yes</option>
-        <option value="unknown">Unknown</option>
     </select><br><br>
 
     <label for="loan">Does customer have personal loan?:</label>
     <select id="loan" name="loan" required>
+        <option value="unknown">Unknown</option>
         <option value="no">No</option>
         <option value="yes">Yes</option>
-        <option value="unknown">Unknown</option>
     </select><br><br>
 
     <label for="contact">Contact communication type:</label>
     <select id="contact" name="contact" required>
+        <option value="unknown">Unknown</option>
         <option value="cellular">Cellular</option>
         <option value="telephone">Telephone</option>
-        <option value="unknown">Unknown</option>
     </select><br><br>
 
     <label for="month">Last contact month:</label>
@@ -134,20 +146,20 @@
     </select><br><br>
 
     <label for="campaign">Number of contacts performed during this campaign and for this client:</label>
-    <input type="number" id="campaign" name="campaign" min="0" required><br><br>
+    <input type="number" id="campaign" name="campaign" min="0" step="1" required><br><br>
 
     <label for="pdays">Number of days that passed by after the client was last contacted from a previous campaign:</label>
-    <input type="number" step="0.01" id="pdays" name="pdays" required><br><br>
+    <input type="number" id="pdays" name="pdays" min="0" step="1" required><br><br>
 
-    <label for="previous">'Number of contacts performed before this campaign and for this client:</label>
-    <input type="number" id="previous" name="previous" min="0" required><br><br>
+    <label for="previous">Number of contacts performed before this campaign and for this client:</label>
+    <input type="number" id="previous" name="previous" min="0" step="1" required><br><br>
 
     <label for="poutcome">Outcome of the previous marketing campaign:</label>
     <select id="poutcome" name="poutcome" required>
+        <option value="unknown">Unknown</option>
         <option value="failure">Failure</option>
         <option value="nonexistent">Nonexistent</option>
         <option value="success">Success</option>
-        <option value="unknown">Unknown</option>
     </select><br><br>
 
     <input type="submit" value="Submit">

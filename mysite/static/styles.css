@@ -492,3 +492,20 @@ canvas {
 .panel.show {
   display: block;
 }
+
+/* CSS for flashing test in bank marketing dashboard */
+.green-flashy {
+  color: green;
+  font-weight: bold;
+  animation: flash 1s infinite;
+}
+
+.red-negative {
+  color: red;
+  font-weight: bold;
+}
+
+@keyframes flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

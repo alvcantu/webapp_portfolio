@@ -13,6 +13,8 @@ from graphviz import Digraph
 import sqlparse
 from datetime import datetime
 from decimal import Decimal
+from sklearn.preprocessing import LabelEncoder
+import xgboost as xgb
 
 
 # Initializes Flask app, backend framework that connects to front-end and computes all logic
@@ -311,66 +313,69 @@ def dash_self_service():
 
 @app.route('/dash_ml_bank_marketing', methods=['GET', 'POST'])
 def dash_ml_bank_marketing():
-    # sql_query_extract = '''
-    # SELECT * FROM BM_FactCustomers LIMIT 1;
-    # '''
 
-    # # Fetch data
-    # mydb, cursor = get_db_connection()
-    # cursor.execute(sql_query_extract)
-    # data = cursor.fetchall()
-    # columns = [i[0] for i in cursor.description]  # Get column names
+    # Setting empty strings that get filled with form data later
+    prediction = ''
+    customer_approval = ''
 
-    # # Convert to DataFrame
-    # df = pd.DataFrame(data, columns=columns)
+    if request.method == 'POST':
+        # Values to inserted in dataframe, will come fron front-end in the future.
+        user_input = {
+            'age': int(request.form.get('age', 0)),  # Default to 0 if not provided or empty, round to 2 decimals
+            'job': request.form.get('job'),  
+            'marital': request.form.get('marital'),  
+            'education': request.form.get('education'),  
+            'default_credit': request.form.get('default_credit'),  # Has credit in default?
+            'balance': int(request.form.get('balance', 0)),  # Account balance, default to 0
+            'housing': request.form.get('housing'),  # Has housing loan?
+            'loan': request.form.get('loan'),  # Has personal loan?
+            'contact': request.form.get('contact'),  # Contact communication type
+            'month': request.form.get('month'),  # Last contact month of year
+            'campaign': int(request.form.get('campaign', 0)),  # Number of contacts performed during this campaign and for this client
+            'pdays': int(request.form.get('pdays', 0)),  # Number of days that passed by after the client was last contacted from a previous campaign
+            'previous': int(request.form.get('previous', 0)),  # Number of contacts performed before this campaign and for this client
+            'poutcome': request.form.get('poutcome')  # Outcome of the previous marketing campaign
+        }
 
-    # # Only extract the needed features
-    # features = df.drop(columns=['subscribed_y', 'duration','customer_id'])
+        # Initialize LabelEncoder
+        le = LabelEncoder()
 
-    # # Values to inserted in dataframe, will come fron front-end in the future.
-    # user_input = {
-    #     'age': request.form.get('age'), 
-    #     'job': request.form.get('job'),  
-    #     'marital': request.form.get('marital'),  
-    #     'education': request.form.get('education'),  
-    #     'default_credit': request.form.get('default_credit'),  # Has credit in default?
-    #     'balance': request.form.get('balance'),  # Account balance
-    #     'housing': request.form.get('housing'),  # Has housing loan?
-    #     'loan': request.form.get('loan'),  # Has personal loan?
-    #     'contact': request.form.get('contact'),  # Contact communication type
-    #     'month': request.form.get('month'),  # Last contact month of year
-    #     'campaign': request.form.get('campaign'),  # Number of contacts performed during this campaign and for this client
-    #     'pdays': request.form.get('pdays'),  # Number of days that passed by after the client was last contacted from a previous campaign (999 means client was not previously contacted)
-    #     'previous': request.form.get('previous'),  # Number of contacts performed before this campaign and for this client
-    #     'poutcome': request.form.get('poutcome')  # Outcome of the previous marketing campaign
-    # }
+        # Here, we'll define which keys should be treated as categories
+        categorical_keys = ['job', 'marital', 'education', 'default_credit', 'housing', 'loan', 'contact', 'month', 'poutcome']
 
-    # # adding user_input
-    # features.loc[0] = pd.Series(user_input)
+        # Encode categorical variables, after this loop, user_input will have numerical labels for categorical data
+        for key in user_input.keys():
+            if key in categorical_keys:
+                # Transform the categorical data into numerical labels
+                user_input[key] = le.fit_transform([user_input[key]])[0]
 
-    # # Convert ENUM and other categorical data to category type for better memory usage and performance
-    # for col in features.columns:
-    #     if features[col].dtype == 'object':  # This will catch both ENUM and VARCHAR
-    #         features[col] = features[col].astype('category')
+        # Convert dict to DataFrame
+        user_input_df = pd.DataFrame([user_input])
 
-    # # Encode categorical variables
-    # le = LabelEncoder()
-    # for column in features.select_dtypes(include=['category', 'object']):
-    #     features[column] = le.fit_transform(features[column])
+        # Load model
+        model = xgb.Booster()
+        model.load_model('bank_marketing/ml_model_bank_marketing.json')
 
-    # # Import the model
-    # model = xgb.XGBRegressor()
-    # model.load_model('bank_marketing/ml_model_classification_bank_marketing.json')
+        # Convert to DMatrix
+        X = xgb.DMatrix(user_input_df)
 
-    # Apply the model to the data
-    # X = df[features]
-    # predictions = model.predict(X)
-    # predictions = 0
+        #Predict and convert for evaluation
+        prediction = model.predict(X)
+        prediction = round(prediction[0], 2)*100
 
-    # # Convert predictions to a DataFrame if it's not already one
-    # final_prediction = 'yes' if predictions[0] == 1 else 'no'
+        # Final determination for customer
+        customer_determination = ''
+        if prediction >50:
+            customer_approval = 'Yes'
+        else:
+            customer_approval = 'No'
 
-    return render_template('dash_ml_bank_marketing.html')
+        # Convert prediction to string with % sign
+        prediction = str(prediction) + '%'
+
+    return render_template('dash_ml_bank_marketing.html',
+                            prediction=prediction,
+                            customer_approval=customer_approval)
 
 @app.route('/dash_ml_models_online_retail', methods=['GET', 'POST'])
 def dash_ml_models_online_retail():
@@ -655,6 +660,8 @@ def documentation():
         'performancemeasures_mlmodel_online_retail': '/home/alvcantu/online_retail/performancemeasures_mlmodel_online_retail.py',
         # Bank Marketing
         'etl_bank_marketing': '/home/alvcantu/bank_marketing/etl_bank_marketing.py',
+        'ml_model_bank_marketing': '/home/alvcantu/bank_marketing/ml_model_bank_marketing.py',
+        'etl_ml_model_bank_marketing': '/home/alvcantu/bank_marketing/etl_ml_model_bank_marketing.py'
     }
 
     replacements = [

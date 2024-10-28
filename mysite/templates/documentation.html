@@ -149,6 +149,11 @@
           <h2>Bank marketing data mart</h2>
           <h4>Transforming the data and inserting it into mySQL database with data quality constraints.</h4>
           <pre><code class="language-python">{{ etl_bank_marketing }}</code></pre>
+          <h4>Create a classification model for using XGBoost to predict the probability of customer subscribing to a bank deposit.</h4>
+          <h4>This model is then saved as a json file and applied to what the user inputs in the front-end.</h4>
+          <pre><code class="language-python">{{ ml_model_bank_marketing }}</code></pre>
+          <h4>Insert the model predictions into the database for testing.</h4>
+          <pre><code class="language-python">{{ etl_ml_model_bank_marketing }}</code></pre>
         </section>
       </section>
 
