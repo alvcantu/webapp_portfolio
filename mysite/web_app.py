@@ -13,7 +13,6 @@ from graphviz import Digraph
 import sqlparse
 from datetime import datetime
 from decimal import Decimal
-from sklearn.preprocessing import LabelEncoder
 import xgboost as xgb
 
 
@@ -337,17 +336,19 @@ def dash_ml_bank_marketing():
             'poutcome': request.form.get('poutcome')  # Outcome of the previous marketing campaign
         }
 
-        # Initialize LabelEncoder
-        le = LabelEncoder()
+        # Load the label encoding from the JSON file
+        with open('bank_marketing/ml_model_label_enconding_bank_marketing.json', 'r') as json_file:
+            label_encoding = json.load(json_file)
 
-        # Here, we'll define which keys should be treated as categories
+        # Define the keys to be treated as categorical
         categorical_keys = ['job', 'marital', 'education', 'default_credit', 'housing', 'loan', 'contact', 'month', 'poutcome']
 
-        # Encode categorical variables, after this loop, user_input will have numerical labels for categorical data
+        # Encode categorical variables using the loaded label encoding dictionary
         for key in user_input.keys():
             if key in categorical_keys:
-                # Transform the categorical data into numerical labels
-                user_input[key] = le.fit_transform([user_input[key]])[0]
+                # Use the label encoding mapping from the JSON file
+                user_input[key] = label_encoding[key].get(user_input[key], -1)  # -1 for unknown values not in the mapping
+
 
         # Convert dict to DataFrame
         user_input_df = pd.DataFrame([user_input])
