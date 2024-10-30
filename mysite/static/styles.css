@@ -497,12 +497,15 @@ canvas {
 .green-flashy {
   color: green;
   font-weight: bold;
+  font-size: 18px;
   animation: flash 1s infinite;
 }
 
 .red-negative {
   color: red;
   font-weight: bold;
+  font-size: 18px;
+  animation: flash 1s infinite;
 }
 
 @keyframes flash {

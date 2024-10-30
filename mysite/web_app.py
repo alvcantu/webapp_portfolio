@@ -382,7 +382,7 @@ def dash_ml_bank_marketing():
 def dash_ml_models_online_retail():
     # Define metrics and get selected performance measure
     metrics = ['RMSE', 'MSE', 'MAE', 'MAPE', 'AVG % difference from actual']
-    selected_performance_measure = request.args.get('performance_measure', metrics[0])
+    selected_performance_measure = request.args.get('performance_measure', metrics[3])
     
     # Read and filter performance data directly during loading
     performance_data = pd.read_csv('online_retail/performancemeasures_mlmodel_online_retail.csv')
@@ -630,6 +630,7 @@ def documentation():
     paths = {
         'web_app': '/home/alvcantu/mysite/web_app.py',
         'presentation_generator': '/home/alvcantu/presentation_generator.py',
+        'dash_self_service': 'mysite/templates/dash_self_service.html',
         # South Park files
         'run_southpark': '/home/alvcantu/run_southpark.py',
         'character_details_spider': '/home/alvcantu/southpark/southpark/spiders/character_details_spider.py',
@@ -659,10 +660,12 @@ def documentation():
         'attempt4_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt4_create_mlmodel_online_retail.py',
         'attempt4_etl_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt4_etl_mlmodel_online_retail.py',
         'performancemeasures_mlmodel_online_retail': '/home/alvcantu/online_retail/performancemeasures_mlmodel_online_retail.py',
+        'dash_ml_models_online_retail': '/home/alvcantu/mysite/templates/dash_ml_models_online_retail.html',
         # Bank Marketing
         'etl_bank_marketing': '/home/alvcantu/bank_marketing/etl_bank_marketing.py',
         'ml_model_bank_marketing': '/home/alvcantu/bank_marketing/ml_model_bank_marketing.py',
-        'etl_ml_model_bank_marketing': '/home/alvcantu/bank_marketing/etl_ml_model_bank_marketing.py'
+        'etl_ml_model_bank_marketing': '/home/alvcantu/bank_marketing/etl_ml_model_bank_marketing.py',
+        'dash_ml_bank_marketing': '/home/alvcantu/mysite/templates/dash_ml_bank_marketing.html'
     }
 
     replacements = [

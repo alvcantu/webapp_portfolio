@@ -129,7 +129,7 @@
         <option value="telephone">Telephone</option>
     </select><br><br>
 
-    <label for="month">Last contact month:</label>
+    <label for="month">Last contact month (leave as current month if first campaign):</label>
     <select id="month" name="month" required>
         <option value="jan">Jan</option>
         <option value="feb">Feb</option>
@@ -144,6 +144,16 @@
         <option value="nov">Nov</option>
         <option value="dec">Dec</option>
     </select><br><br>
+
+    <script>
+        // Get the current month as a string in the format "jan", "feb", etc.
+        const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+        const currentMonth = monthNames[new Date().getMonth()];
+        
+        // Set the default selected option
+        document.getElementById("month").value = currentMonth;
+    </script>
+
 
     <label for="campaign">Number of contacts performed during this campaign and for this client:</label>
     <input type="number" id="campaign" name="campaign" min="0" step="1" required><br><br>

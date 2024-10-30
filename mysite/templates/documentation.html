@@ -52,6 +52,7 @@
       </li>
       <li><a href="#app" class="documentation-button">How app was made</a>
         <ul>
+          <li><a href="#app-self-service" class="documentation-button">Data 'Google'</a></li>
           <li><a href="#app-presentation" class="documentation-button">Presentation generator</a></li>
           <li><a href="#app-screenshots" class="documentation-button">LLM costs and CRON scheduler</a></li>
         </ul>
@@ -145,8 +146,11 @@
           <pre><code class="language-python">{{ attempt4_etl_mlmodel_online_retail }}</code></pre>
           <h4>Using all these models above I then execute SQL queries of performance metrics for each, these are then shown in the bar graph in the dash:</h4>
           <pre><code class="language-python">{{ performancemeasures_mlmodel_online_retail }}</code></pre>
+          <h4>The HTML of the 'Predict Sales' dash, showing all the models predictions, explanations, and performance metrics in a user friendly way.</h4>
+          <pre><code class="language-html">{{ dash_ml_models_online_retail }}</code></pre>
         <section id="database-bank_marketing"  >
           <h2>Bank marketing data mart</h2>
+          <h3>The aim of this project is to create and apply a classification machine learning model in a useful way. Data for this project comes from UC Irvine Machine Learning Respository: https://archive.ics.uci.edu/dataset/222/bank+marketing</h3>
           <h4>Transforming the data and inserting it into mySQL database with data quality constraints.</h4>
           <pre><code class="language-python">{{ etl_bank_marketing }}</code></pre>
           <h4>Create a classification model for using XGBoost to predict the probability of customer subscribing to a bank deposit.</h4>
@@ -154,16 +158,22 @@
           <pre><code class="language-python">{{ ml_model_bank_marketing }}</code></pre>
           <h4>Insert the model predictions into the database for testing.</h4>
           <pre><code class="language-python">{{ etl_ml_model_bank_marketing }}</code></pre>
+          <h4>The HTML of the 'Predict Bank Marketing Dashboard' which submits user-filled form and gets processesed by the created model in the app's backend.</h4>
+          <pre><code class="language-html">{{ dash_ml_bank_marketing }}</code></pre>
         </section>
       </section>
 
       <section id="app">
         <h2>How app was created</h2>
         <h3>This script is the Flask backend used to apply all logic for all aspects of the app. Each app route @ represents each button or url of the app</h3>
-        <h4>For the data 'Google', I run a query to extract the information schema of each table in the database automatically (with comments of each column for added context) and include it in the prompt for the large language model to understand the data and output an accurate SQL query. This query is then executed, the results are cleaned/converted, and the output is rendered to the user interface. The 'Table' option has the ability to export to CSV, Excel, PDF etc. While the other visual options generate a Chart.js, the data is pre-processed in the backend as well. I use OpenRouter auto selector so the best LLM is chosen every time. For safety purposes, I make sure to only execute queries that do not modify the database in any way.</h4>
         <h4>For this documentation, all text boxes with code on this site are automatically rendered with senstive data such as passwords and API keys being hidden or 'sanitized'. The database schema diagram is automatically created with the create_data_structure_diagram function using graphviz library.</h4>
         <h4>For the data dashboards, note how a SQL query is executed that dynamically changes depending on user input. This results in only the data the user needs to see to be loaded to the site, hence reducing the need for additional front-end javascript logic.</h4>
         <pre><code class="language-python">{{ web_app }}</code></pre>
+        <section id="app-self-service">
+          <h4>For the Data 'Google', as shown in the flask @dash_self_service section above, I run a query to extract the information schema of each table in the database automatically (with comments of each column for added context) and include it in the prompt for the large language model to understand the data and output an accurate SQL query. This query is then executed, the results are cleaned/converted, and the output is rendered to the user interface. The 'Table' option has the ability to export to CSV, Excel, PDF etc. While the other visual options generate a Chart.js, the data is pre-processed in the backend as well. I use OpenRouter auto selector so the best LLM is chosen every time. For safety purposes, I make sure to only execute queries that do not modify the database in any way.</h4>
+          <h3>This script is the front-end HTML for the self-service. It is used to collect user input and send it to the back-end.</h3>
+          <pre><code class="language-html">{{ dash_self_service }}</code></pre>
+        </section>
         <section id="app-presentation">
           <h3>This script generates the daily presentation. I use a master canvas so the presentation remains consistent throughout and add elements afterwards. Graphs (from matplotlib) and bullet points (from LLM response) are both always generated using latest data. This file is also placed on a CRON job scheduler so it runs every day, generating a new presentation automcatically.</h3>
           <pre><code class="language-python">{{ presentation_generator }}</code></pre>
