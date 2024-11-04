@@ -493,6 +493,13 @@ canvas {
   display: block;
 }
 
+/* CSS for GIF in classification model dash */
+.approval-image {
+  max-width: 100%;
+  height: auto;
+}
+
+
 /* CSS for flashing test in bank marketing dashboard */
 .green-flashy {
   color: green;

@@ -41,7 +41,7 @@
   <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 
   <!-- Titles -->
-  <h1>Predict Bank Marketing Dashboard (WIP)</h1>
+  <h1>Predict Bank Marketing Dashboard</h1>
   <h2>You are a call center worker talking with a customer, enter their details below to predict with an XGBoost classification machine learning model if the client will subscribe to a term deposit.</h2>
 
   <!--If form is submitted, show prediction and customer determination-->
@@ -53,7 +53,8 @@
         {{ customer_approval }}
     </p>
     <img src="{% if customer_approval == 'Yes' %}{{ url_for('static', filename='approval_yes.webp') }}{% else %}{{ url_for('static', filename='approval_no.webp') }}{% endif %}" 
-         alt="Customer Approval Image" class="approval-image">
+         alt="Customer Approval Image" 
+         class="approval-image">
     <p style="margin-top: 5vh;">Enter new details below:</p>
   {% endif %}
 
