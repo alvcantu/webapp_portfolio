@@ -63,6 +63,7 @@
   <button class="accordion">Predicted_Sales1</button>
   <div class="panel">
     <p>In my first model, I mistakenly included exact quantities sold and prices, which directly calculate sales, causing overfitting—it predicted training data well but struggled to generalize. I initially only included Year, Month, and Day from the InvoiceDate, but could have added more features. To capture seasonal trends, I split the data by time order using TimeSeriesSplit with 3 splits, a common choice (3-5). I used RandomizedSearchCV to test 30 different combinations of model settings, like trying on different outfits to find the best fit. Despite promising metrics, the model failed with new data due to the initial oversight.</p>
+  </div>
   <!--Second sales model-->
   <button class="accordion">Predicted_Sales2</button>
   <div class="panel">
