@@ -62,39 +62,40 @@
   <!--First sales model-->
   <button class="accordion">Predicted_Sales1</button>
   <div class="panel">
-    <p>In my first model, I mistakenly included exact quantities sold and prices, which directly calculate sales, causing overfitting—it predicted training data well but struggled to generalize. I initially only included Year, Month, and Day from the InvoiceDate, but could have added more features. To capture seasonal trends, I split the data by time order using TimeSeriesSplit with 3 splits, a common choice (3-5). I used RandomizedSearchCV to test 30 different combinations of model settings, like trying on different outfits to find the best fit. Despite promising metrics, the model failed with new data due to the initial oversight.</p>
+    <p>In my first model, I mistakenly included exact quantities sold and prices, which directly calculate sales, causing overfitting—it predicted training data well but struggled to generalize. I initially only included Year, Month, and Day from the InvoiceDate, but could have added more features. To capture seasonal trends, I split the data by time order using TimeSeriesSplit with 3 splits, a common choice (3-5). I used RandomizedSearchCV to test 30 different combinations of model settings, like trying on different outfits to find the best fit.</p>
   </div>
   <!--Second sales model-->
   <button class="accordion">Predicted_Sales2</button>
   <div class="panel">
-    <p>As with the transactions per day model, this second model's settings are chosen with a Bayesian Optimization technique instead as it learns from its mistakes. Unlike the first, I did not include deterministic features like Quantity and UnitPrice. I expanded the features based on InvoiceDate so now the model is trained on Quarters and Season which can help with yearly sales fluctuations. Like the first, I also used TimeSeriesSplit with 3 rounds of splits. The performance metrics suggest this model is worse that the first one, but given this was not trained on deterministic features that is expected. When applying to future data there seem to be less fluctuation in sales as compared to actual, which suggest this model is not very good at estimating days of high or low sales.</p>
+    <p>As with the transactions per day model, this second model's settings are chosen with a Bayesian Optimization technique instead as it learns from its mistakes. Unlike the first, I did not include deterministic features like Quantity and UnitPrice. I expanded the features based on InvoiceDate so now the model is trained on Quarters and Season which can help with yearly sales fluctuations. I split the data in a simpler way with 70% trainisng 30% testing. When applying to future data there seem to be less fluctuation in sales as compared to actual, which suggest this model is not very good at estimating days of high or low sales.</p>
   </div>
   <!--Third sales model-->
   <button class="accordion">Predicted_Sales3</button>
   <div class="panel">
-    <p>The third model adds new features to the training such as: "IsHoliday", which determines if an invoice date is a holiday in a specific country. "Continent" from Country column. "Description" of the item being transacted. Fiscal dates associated from the invoice date. Categorises StockCode's such as those that are fees like 'AMAZONFEE' or 'BANK CHARGES', those that are gift cards that start with 'gift', those are postage 'POST' or 'DOT', and those 'party bags that start with 'DCGSS'. Also classify the StockCode's according to their length. Given its high performance last time, I stuck with Bayesian Optimization but incremented the number of iterations (how many settings it tests)for the model from 25 to 75. Performance metrics are mostly the same as the second model with the exception of Mean Absolute Percentage Error or MAPE and the average % difference between actual and predicted values, suggesting the model is better at handling outliers such as returns or very high sales dates. When applying the model to future data, the predictions are smaller than the second but also less dispersed.</p>
+    <p>The third model adds new features to the training such as: "IsHoliday", which determines if an invoice date is a holiday in a specific country. "Continent" from Country column. "Description" of the item being transacted. Fiscal dates associated from the invoice date. Categorises StockCode's and classifies them according to their length. Given its high performance last time, I stuck with Bayesian Optimization but incremented the number of iterations (how many settings it tests)for the model from 25 to 75. When applying the model to future data, the predictions are smaller than the second but also less dispersed.</p>
   </div>
    <!--Fourth sales model-->
   <button class="accordion">Predicted_Sales4</button>
   <div class="panel">
-    <p>Given the third model demonstrated that it is possible to reduce MAPE by a significant amount and given MAPE measures the differences between actual and predicted in relative terms rather than absolute, for the fourth model I decided to use MAPE as a loss function (i.e. minimise it rather than RMSE. In retrospect minimising this measure is more appropriate given sales amount can vary by a lot from transaction to transaction, so having accurate predictions in % or relative terms is more important). I stuck with the same features and same # of iterations of Bayesian Optimization for choosing ideal settings as the third model. This model proves more acurate across all performance measures.</p>
+    <p>Given the third model demonstrated that it is possible to reduce MAPE by a significant amount and given MAPE measures the differences between actual and predicted in relative terms rather than absolute, for the fourth model I decided to use MAPE as a loss function (i.e. minimise it rather than RMSE. In retrospect minimising this measure is more appropriate given sales amount can vary by a lot from transaction to transaction, so having accurate predictions in % or relative terms is more important). I stuck with the same features and same # of iterations of Bayesian Optimization for choosing ideal settings as the third model.</p>
   </div>
 
   <!-- Filter form -->
-  <form id="filterForm" onchange="this.submit()">
+  <!-- <form id="filterForm" onchange="this.submit()">
       <label for="performance_measure">Performance Measure:</label>
       <select name="performance_measure" id="performance_measure">
           {% for metric in metrics %}
           <option value="{{ metric }}" {% if selected_performance_measure == metric %}selected{% endif %}>{{ metric }}</option>
           {% endfor %}
       </select>
-  </form>
+  </form> -->
 
-  <!-- Chart.js -->
-  <div style="width:80%; height: 400px;">
+  <!-- Performance chart -->
+  <!-- <div style="width:80%; height: 400px;">
     <canvas id="performanceChart"></canvas>
-  </div>
+  </div> -->
 
+  <!-- Predictions chart -->
   <h3>Future 3 month sales predictions</h3>
   <h4 style="width: 80%;">Using the transactions model described above, I apply it to future 3 months of days. Then I randomnly filled combinations of Country, StockCode and CustomerID for each future dates, these are validated so all the combinations are valid (ex. no customer with UK as country appears as having Spain as country in the 3 month future prediction). The sales models are then applied to this new dataset and the predictions are plotted below.</h4>
   <h4 style="width: 80%;">Given the mistake in Predicted_Sales1 of using determenistic features when training the model, its crossed out by default since the values are too out of range and distort the chart.</h4>

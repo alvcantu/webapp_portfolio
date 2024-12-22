@@ -104,6 +104,8 @@ df['IsHoliday'] = df.apply(is_holiday, axis=1)
 
 # Additional feature engineering
 # Categoize StockCodes
+# Convert stockcode to string
+df['StockCode'] = df['StockCode'].astype(str)
 df['StockCodeCategory'] = df['StockCode'].apply(categorize_stockcode)
 df['StockCodeLength'] = df['StockCode'].str.len()
 
