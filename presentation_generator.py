@@ -286,7 +286,7 @@ def create_south_park_elements():
         data=json.dumps({
         "model": "meta-llama/llama-3.1-8b-instruct:free", # Use free LLM to reduce costs
         "messages": [
-            {"role": "system", "content": "Write 4 bullet points about the attached South Park character information. Only include the bullet points."},
+            {"role": "system", "content": "Write 4 short bullet points about the attached South Park character information. Only include the bullet points."},
             {"role": "user", "content": f"{character_info}"}
         ]
         })

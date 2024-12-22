@@ -55,6 +55,8 @@ def quality_checks(df):
 nyse = mcal.get_calendar('NYSE')
 # Get the Saudi Stock Exchange calendar, exception for Saudi Aramco used later
 saudi = mcal.get_calendar('XSAU')
+# Get the Saudi Stock Exchange calendar, exception for Petrochina used later
+hongkong = mcal.get_calendar('HKEX')
 
 # Extract only the most recent 30 trading days of data
 query = """
@@ -80,7 +82,10 @@ for ticker in unique_tickers:
     # Set the frequency to business day
     if ticker == '2222.SR':
         calendar = saudi
-        ticker_data = ticker_data.asfreq(pd.tseries.offsets.CustomBusinessDay(calendar=mcal.get_calendar('XSAU')))
+        ticker_data = ticker_data.asfreq(pd.tseries.offsets.CustomBusinessDay(calendar=saudi))
+    if ticker == '0857.HK':
+        calendar = hongkong
+        ticker_data = ticker_data.asfreq(pd.tseries.offsets.CustomBusinessDay(calendar=hongkong))
     else:
         calendar = nyse
         ticker_data = ticker_data.asfreq('B')

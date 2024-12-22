@@ -206,7 +206,7 @@ def get_table_html(sql_query):
 # Create data structure diagram for documentation and user view
 def create_data_structure_diagram(db_description, output_folder):
     dot = Digraph(comment='Data Structure Diagram')
-    dot.attr(rankdir='TB', size='2', dpi='300')
+    dot.attr(rankdir='TB', size='2', dpi='500')
     dot.attr('node', shape='record', style='filled', fillcolor='lightblue')
 
     def format_data_type(data_type, key_type):
@@ -253,8 +253,8 @@ datamart_mapping = load_datamart_mapping()
 # Converts db_description into diagram thats used in documentation
 create_data_structure_diagram(db_description, '/home/alvcantu/mysite/static')
 
-@app.route('/dash_self_service', methods=['GET', 'POST'])
-def dash_self_service():
+@app.route('/dash_data_google', methods=['GET', 'POST'])
+def dash_data_google():
     user_query = ''
     sql_query = ''
     data_output = ''
@@ -304,7 +304,7 @@ def dash_self_service():
         else:
             data_output = prepare_data_for_chart(sql_query)
 
-    return render_template('dash_self_service.html',
+    return render_template('dash_data_google.html',
                            selected_visual=selected_visual,
                            sql_query=sql_query,
                            user_query=user_query,
@@ -551,7 +551,7 @@ def dash_southpark():
                            episode_list=episode_list,
                            character_role=character_role)
 
-@app.route('/dash_stocks')
+@app.route('/dash_stocks', methods=['GET', 'POST'])
 def dash_stocks():
 
     # Connect to MySQL database
@@ -630,7 +630,7 @@ def documentation():
     paths = {
         'web_app': '/home/alvcantu/mysite/web_app.py',
         'presentation_generator': '/home/alvcantu/presentation_generator.py',
-        'dash_self_service': 'mysite/templates/dash_self_service.html',
+        'dash_data_google': 'mysite/templates/dash_data_google.html',
         # South Park files
         'run_southpark': '/home/alvcantu/run_southpark.py',
         'character_details_spider': '/home/alvcantu/southpark/southpark/spiders/character_details_spider.py',
@@ -652,9 +652,9 @@ def documentation():
         'transactions_mlmodel_online_retail': '/home/alvcantu/online_retail/transactions_mlmodel_online_retail.py',
         'predictions_mlmodel_online_retail': '/home/alvcantu/online_retail/predictions_mlmodel_online_retail.py',
         'attempt1_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt1_create_mlmodel_online_retail.py',
-        'attempt1_etl_online_retail': '/home/alvcantu/online_retail/attempt1_etl_online_retail.py',
+        'attempt1_etl_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt1_etl_mlmodel_online_retail.py',
         'attempt2_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt2_create_mlmodel_online_retail.py',
-        'attempt2_etl_online_retail': '/home/alvcantu/online_retail/attempt2_etl_online_retail.py',
+        'attempt2_etl_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt2_etl_mlmodel_online_retail.py',
         'attempt3_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt3_create_mlmodel_online_retail.py',
         'attempt3_etl_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt3_etl_mlmodel_online_retail.py',
         'attempt4_create_mlmodel_online_retail': '/home/alvcantu/online_retail/attempt4_create_mlmodel_online_retail.py',
