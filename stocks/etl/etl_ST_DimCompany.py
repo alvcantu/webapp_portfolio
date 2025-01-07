@@ -21,11 +21,11 @@ def get_stock_info(ticker):
     # PetroChina
     elif ticker == '857':
         ticker = '0857.HK'
-    
+
     # Extract stock information
     stock = yf.Ticker(ticker)
     info = stock.info
-    
+
     # Extract relevant information from the stock info
     return [
         ticker,
@@ -40,6 +40,9 @@ def get_stock_info(ticker):
 # Create DataFrame with stock information
 columns = ['ticker', 'name', 'country', 'website', 'industry', 'currency', 'summary']
 ticker_df = pd.DataFrame([get_stock_info(ticker) for ticker in df['ticker']], columns=columns)
+
+ticker_df = ticker_df.dropna()
+
 
 # Data quality checks
 def data_quality_checks(df):
