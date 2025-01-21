@@ -83,7 +83,7 @@ def generate_presentation_subtitle():
 # Function to clean generated text into clean bullets.
 def fancy_bullet_points(text):
     # Replace various bullet point symbols with a circle bullet point
-    bullet_symbols = r'[-•●○]'
+    bullet_symbols = r'[-•●○*]'
     text = re.sub(bullet_symbols, '• ', text)
 
     # Add new lines before each bullet point
@@ -455,7 +455,7 @@ def create_slides():
             data=json.dumps({
             "model": "meta-llama/llama-3.1-8b-instruct:free", # Use free LLM to reduce costs
             "messages": [
-                {"role": "system", "content": "Summarize the following company stock data in 3 very short bullet points; one describing the latest actual price change, one describing overall trend, last one describing forecasted data. Only include the bullet points."},
+                {"role": "system", "content": "Summarize the following company stock data in 3 short one line bullet points; one describing the latest actual price change, one describing overall trend, last one describing forecasted data. Only include the bullet points."},
                 {"role": "user", "content": f"{three_week_data}"}
             ]
             })
