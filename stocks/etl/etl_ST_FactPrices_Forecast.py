@@ -79,19 +79,20 @@ unique_tickers = df['ticker'].unique()
 for ticker in unique_tickers:
     ticker_data = df[df['ticker'] == ticker].set_index('date')['close_price']
 
-    # Set the frequency to business day
     if ticker == '2222.SR':
         calendar = saudi
-        ticker_data = ticker_data.asfreq(pd.tseries.offsets.CustomBusinessDay(calendar=saudi))
-    if ticker == '0857.HK':
+    elif ticker == '0857.HK':
         calendar = hongkong
-        ticker_data = ticker_data.asfreq(pd.tseries.offsets.CustomBusinessDay(calendar=hongkong))
     else:
         calendar = nyse
-        ticker_data = ticker_data.asfreq('B')
+
+    valid_trading_days = calendar.valid_days(start_date=ticker_data.index.min(), end_date=ticker_data.index.max())
+    ticker_data = ticker_data.reindex(valid_trading_days)
 
     # Get the next 5 trading days for this ticker
     last_date = ticker_data.index.max()
+    if last_date not in valid_trading_days:
+        last_date = valid_trading_days[-1]  # Get the latest valid trading day
     next_trading_days = calendar.valid_days(start_date=last_date + timedelta(days=1), end_date=last_date + timedelta(days=20))[:5]
 
     # Fit ARIMA model
