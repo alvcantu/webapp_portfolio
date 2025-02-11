@@ -625,6 +625,46 @@ def dash_stocks():
                            company_names=company_names,
                            company_data=company_data)
 
+@app.route('/dash_cdmx', methods=['GET','POST'])
+def dash_cdmx():
+    return render_template('dash_cdmx.html')
+
+@app.route('/get_parking_spots')
+def get_parking_spots():
+    """Ensure the file is read and served correctly as JSON"""
+    with open('/home/alvcantu/cdmx/infraestructura-de-parquimetros.json', 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return jsonify(data)
+
+@app.route('/get_bike_stations', methods=['GET'])
+def get_bike_stations():
+    bike_stations_df = pd.read_csv('/home/alvcantu/cdmx/estaciones_ecobici_sist_anterior.csv')
+
+    # Convert to GeoJSON format
+    features = []
+    for _, row in bike_stations_df.iterrows():
+        feature = {
+            "type": "Feature",
+            "properties": {
+                "nombre": row["nombre"],
+                "ubicación": f"{row['calle_principal']} y {row['calle_secundaria']}",
+                "alcaldía": row["alcaldia"],
+                "tipo_ce": row["tipo_ce"],
+                "candados": row["candados"]
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [float(row["longitud"]), float(row["latitud"])]
+            }
+        }
+        features.append(feature)
+
+    bike_stations_geojson = {
+        "type": "FeatureCollection",
+        "features": features
+    }
+    return jsonify(bike_stations_geojson)
+
 @app.route('/documentation')
 def documentation():
     paths = {
