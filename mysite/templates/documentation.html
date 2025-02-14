@@ -149,7 +149,7 @@
           <pre><code class="language-python">{{ performancemeasures_mlmodel_online_retail }}</code></pre>
           <h4>The HTML of the 'Predict Sales' dash, showing all the models predictions, explanations, and performance metrics in a user friendly way.</h4>
           <pre><code class="language-html">{{ dash_ml_models_online_retail }}</code></pre>
-        <section id="database-bank_marketing"  >
+        <section id="database-bank_marketing" >
           <h2>Bank marketing data mart</h2>
           <h3>The aim of this project is to create and apply a classification machine learning model in a useful way.</h3>
           <h4>Data for this project comes from UC Irvine Machine Learning Respository: https://archive.ics.uci.edu/dataset/222/bank+marketing</h4>
@@ -163,6 +163,18 @@
           <h4>The HTML of the 'Predict Bank Marketing Dashboard' which submits user-filled form and gets processesed by the created model in the app's backend.</h4>
           <pre><code class="language-html">{{ dash_ml_bank_marketing }}</code></pre>
         </section>
+        <section id ='database-cdmx'>
+          <h2>Bike and parking spots in CDMX</h2>
+          <h3>The aim of this project was to build a data pipeline using GeoJSON. The goal is to plot all bike stations and parking meters in Mexico City, the ones with publicicly available data.</h3>
+          <h4>Data for this project comes from 'Portal de Datos Abiertos de CDMX', containing data for ONLY SOME neghbourhoods of the city.</h4>
+          <h4>Bike stations data: https://datos.cdmx.gob.mx/dataset/ubicacion-de-estaciones-de-ecobici-sistema-anterior</h4>
+          <h4>Parking meter data: https://datos.cdmx.gob.mx/dataset/infraestructura-de-parquimetros</h4>
+          <h4>First step was to create a staging file with  the number of bike stations per neighborhood (done by counting each row in the dataset and grouping them) and the approximate area of the neighborhood for later metric calculations (done by calculating the perimeter using the Haversine function which computes the distance between two coordinate points).</h4>
+          <pre><code class="language-python">{{ stg_area_bikestations_percolonia }}</code></pre>
+          <h4>Next step was to create another staging file with the parking meters per neighborhood, but given the GeoJSON does not contain neighbourhood information I joined the data according to coordinates with the bike CSV.</h4>
+          <pre><code class="language-python">{{ stg_parking_per_colonia }}</code></pre>
+          <h4>Then its all rendered to this HTML dashboard with a map and table of the previously computed metrics</h4>
+          <pre><code class="language-html">{{ dash_cdmx }}</code></pre>
       </section>
 
       <section id="app">

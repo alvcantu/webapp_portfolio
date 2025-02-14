@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Parking vs Bikes CDMX</title>
+  <title>Parking and Bikes CDMX</title>
   <!-- Favicon and touch icons -->
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
@@ -17,7 +17,7 @@
   <meta name="theme-color" content="#ffffff">
   <!-- References CSS styling -->
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-  <!-- References JavaScript libraries -->
+  <!-- References Map JavaScript libraries -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <style>
@@ -25,6 +25,28 @@
   </style>
 </head>
 <body>
+
+    <button class="menu-toggle">☰</button>
+    <nav class="sidebar">
+      <ul>
+        <li><a href="/" class="mainmenu-button">Main page</a></li>
+        <li><a href="/dash_data_google" class="standard-button">Data 'Google'</a></li>
+        <li><a href="/dash_ml_bank_marketing" class="standard-button">Predict bank deposit dashboard</a></li>
+        <li><a href="/dash_ml_models_online_retail" class="standard-button">Predict sales dashboard</a></li>
+        <li><a href="/dash_southpark" class="standard-button">South Park data dashboard</a></li>
+        <li><a href="/dash_stocks" class="standard-button">Stocks data dashboard</a></li>
+        <li><a href="{{ url_for('static', filename='presentation.pdf') }}" class="standard-button">Auto-generated presentation</a></li>
+        <li><a href="/documentation#database-cdmx" class="documentation-button">How data model was created</a></li>
+        <li><a href="/documentation#app" class="documentation-button">How this app was created</a></li>
+        <li><a href="https://github.com/alvcantu/coursera_portfolio" class="weblink-button">Data analysis repository</a></li>
+        <li><a href="{{ url_for('static', filename='AlvaroCantuCV.pdf') }}" class="weblink-button">My CV/Resume</a></li>
+        <li><a href="https://www.linkedin.com/in/alvcantu/" class="weblink-button">My LinkedIn</a></li>
+      </ul>
+    </nav>
+
+    <!-- References shared app Javascript logic -->
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+
     <h1>Parking Spots and Bike Stations in CDMX</h1>
     <div id="map"></div>
     <script>

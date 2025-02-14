@@ -705,7 +705,11 @@ def documentation():
         'etl_bank_marketing': '/home/alvcantu/bank_marketing/etl_bank_marketing.py',
         'ml_model_bank_marketing': '/home/alvcantu/bank_marketing/ml_model_bank_marketing.py',
         'etl_ml_model_bank_marketing': '/home/alvcantu/bank_marketing/etl_ml_model_bank_marketing.py',
-        'dash_ml_bank_marketing': '/home/alvcantu/mysite/templates/dash_ml_bank_marketing.html'
+        'dash_ml_bank_marketing': '/home/alvcantu/mysite/templates/dash_ml_bank_marketing.html',
+        # CDMX
+        'stg_area_bikestations_percolonia': '/home/alvcantu/cdmx/stg_area_bikestations_percolonia.py',
+        'stg_parking_percolonia': '/home/alvcantu/cdmx/stg_parking_percolonia.py',
+        'dash_cdmx' : '/home/alvcantu/mysite/templates/dash_cdmx.html'
     }
 
     replacements = [
