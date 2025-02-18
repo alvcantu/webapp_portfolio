@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Parking and Bikes CDMX</title>
+  <title>Bikes and Parking CDMX</title>
   <!-- Favicon and touch icons -->
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
@@ -47,11 +47,18 @@
     <!-- References shared app Javascript logic -->
     <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 
-    <h1>Parking Spots and Bike Stations in CDMX</h1>
+    <h1>Bike Stations and Parking Meters in CDMX</h1>
     <div id="map"></div>
     <script>
         // Initialize the map
-        var map = L.map('map').setView([19.3815, -99.1780], 16);
+        var map = L.map('map', {
+            zoomControl: false // Disable the default zoom control
+        }).setView([19.3815, -99.1780], 16);
+
+        // Add a custom zoom control to the top right
+        L.control.zoom({
+            position: 'topright'
+        }).addTo(map);
         
         // Add OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -104,5 +111,31 @@
             })
             .catch(error => console.error('Error loading bike stations:', error));
     </script>
+
+  <!-- Neighborhood List Section -->
+  <div id="neighborhood-list">
+    <h2 style="color: white; width:100%;">Shared neighborhood data</h2>
+    <table style="color: white; width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th style="border-bottom: 1px solid white; padding: 10px;">Neighborhood</th>
+          <th style="border-bottom: 1px solid white; padding: 10px;">Area (km2)</th>
+          <th style="border-bottom: 1px solid white; padding: 10px;">Bike Stations</th>
+          <th style="border-bottom: 1px solid white; padding: 10px;">Parking Meters</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in final_bikestations_parking_percolonia %}
+        <tr>
+            <td style="padding: 10px; border-bottom: 1px solid white;">{{ record['colonia'] }}</td>
+            <td style="padding: 10px; border-bottom: 1px solid white;">{{ record['area_km2'] }}</td>
+            <td style="padding: 10px; border-bottom: 1px solid white;">{{ record['bike_stations'] }}</td>
+            <td style="padding: 10px; border-bottom: 1px solid white;">{{ record['parking_count'] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+    
 </body>
 </html>

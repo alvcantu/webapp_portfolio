@@ -41,6 +41,7 @@
       <li><a href="/dash_ml_models_online_retail" class="standard-button">Predict sales dashboard</a></li>
       <li><a href="/dash_stocks" class="standard-button">Stocks data dashboard</a></li>
       <li><a href="/dash_southpark" class="standard-button">South Park data dashboard</a></li>
+      <li><a href="/dash_cdmx" class="standard-button">Bikes and Parking CDMX dashboard</a></li>
       <li><a href="{{ url_for('static', filename='presentation.pdf') }}" class="standard-button">Auto-generated presentation</a></li>
       <li><a href="#database" class="documentation-button">How database was made</a>
         <ul>
@@ -48,6 +49,7 @@
           <li><a href="#database-southpark" class="documentation-button">South park data mart</a></li>
           <li><a href="#database-online_retail" class="documentation-button">Online retail data mart</a></li>
           <li><a href="#database-bank_marketing" class="documentation-button">Bank marketing data mart</a></li>
+          <li><a href="#database-cdmx" class="documentation-button">Parking and Bikes CDMX</a></li>
         </ul>
       </li>
       <li><a href="#app" class="documentation-button">How app was made</a>
@@ -164,7 +166,7 @@
           <pre><code class="language-html">{{ dash_ml_bank_marketing }}</code></pre>
         </section>
         <section id ='database-cdmx'>
-          <h2>Bike and parking spots in CDMX</h2>
+          <h2>Parking and bike spots in CDMX</h2>
           <h3>The aim of this project was to build a data pipeline using GeoJSON. The goal is to plot all bike stations and parking meters in Mexico City, the ones with publicicly available data.</h3>
           <h4>Data for this project comes from 'Portal de Datos Abiertos de CDMX', containing data for ONLY SOME neghbourhoods of the city.</h4>
           <h4>Bike stations data: https://datos.cdmx.gob.mx/dataset/ubicacion-de-estaciones-de-ecobici-sistema-anterior</h4>
@@ -172,7 +174,9 @@
           <h4>First step was to create a staging file with  the number of bike stations per neighborhood (done by counting each row in the dataset and grouping them) and the approximate area of the neighborhood for later metric calculations (done by calculating the perimeter using the Haversine function which computes the distance between two coordinate points).</h4>
           <pre><code class="language-python">{{ stg_area_bikestations_percolonia }}</code></pre>
           <h4>Next step was to create another staging file with the parking meters per neighborhood, but given the GeoJSON does not contain neighbourhood information I joined the data according to coordinates with the bike CSV.</h4>
-          <pre><code class="language-python">{{ stg_parking_per_colonia }}</code></pre>
+          <pre><code class="language-python">{{ stg_parking_percolonia }}</code></pre>
+          <h4>Final step of the pipeline is to join the two staging files into one file with shared neighborhood information.</h4>
+          <pre><code class="language-python">{{ final_bikestations_parking_percolonia }}</code></pre>
           <h4>Then its all rendered to this HTML dashboard with a map and table of the previously computed metrics</h4>
           <pre><code class="language-html">{{ dash_cdmx }}</code></pre>
       </section>

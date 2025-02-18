@@ -627,17 +627,29 @@ def dash_stocks():
 
 @app.route('/dash_cdmx', methods=['GET','POST'])
 def dash_cdmx():
-    return render_template('dash_cdmx.html')
+
+    # Read the final CSV file
+    file_path = '/home/alvcantu/cdmx/final_bikestations_parking_percolonia.csv'
+    df = pd.read_csv(file_path)
+
+    # Convert DataFrame to JSON
+    final_bikestations_parking_percolonia = df.to_dict(orient='records')
+
+    return render_template('dash_cdmx.html',
+                            final_bikestations_parking_percolonia=final_bikestations_parking_percolonia)
 
 @app.route('/get_parking_spots')
 def get_parking_spots():
-    """Ensure the file is read and served correctly as JSON"""
+    # Ensure the file is read and served correctly as JSON
+    # Done as separate API to imporve speed of website
     with open('/home/alvcantu/cdmx/infraestructura-de-parquimetros.json', 'r', encoding='utf-8') as f:
         data = json.load(f)
     return jsonify(data)
 
 @app.route('/get_bike_stations', methods=['GET'])
 def get_bike_stations():
+    # Ensure the file is read and served correctly as JSON
+    # Done as separate API to imporve speed of website
     bike_stations_df = pd.read_csv('/home/alvcantu/cdmx/estaciones_ecobici_sist_anterior.csv')
 
     # Convert to GeoJSON format
@@ -709,6 +721,7 @@ def documentation():
         # CDMX
         'stg_area_bikestations_percolonia': '/home/alvcantu/cdmx/stg_area_bikestations_percolonia.py',
         'stg_parking_percolonia': '/home/alvcantu/cdmx/stg_parking_percolonia.py',
+        'final_bikestations_parking_percolonia': '/home/alvcantu/cdmx/final_bikestations_parking_percolonia.py',
         'dash_cdmx' : '/home/alvcantu/mysite/templates/dash_cdmx.html'
     }
 
