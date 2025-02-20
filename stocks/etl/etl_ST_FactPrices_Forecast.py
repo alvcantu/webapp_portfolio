@@ -137,6 +137,16 @@ else:
 
     print(f"{len(values)} forecast records updated in ST_FactPrices.")
 
+
+# Execute query to delete rows with no close prices before today
+delete_query = """
+DELETE FROM ST_FactPrices
+WHERE close_price IS NULL
+AND date < CURDATE()
+"""
+cursor.execute(delete_query)
+mydb.commit()
+
 # Close the cursor and database connection
 cursor.close()
 mydb.close()

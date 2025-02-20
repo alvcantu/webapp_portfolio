@@ -44,7 +44,7 @@
 
   <select id="company-select" onchange="updateCompanyData()">
     {% for company in company_names %}
-      <option value="{{ company }}" {% if company == selected_company %}selected{% endif %}>{{ company }}</option>
+      <option value="{{ company }}" {% if company == 'Tesla, Inc.' %}selected{% endif %}>{{ company }}</option>
     {% endfor %}
   </select>
 
