@@ -278,7 +278,7 @@ def dash_data_google():
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         }
         data = {
-            "model": "openrouter/auto",  # You can change this to another model if needed
+            "model": "openai/gpt-4o-2024-11-20",  # You can change this to another model if needed
             "messages": [
                 {"role": "system", "content": "You are a MySQL server query generator that outputs code ready to executed. Do not join tables that do not start with the same two letters."},
                 {"role": "user", "content": prompt}
