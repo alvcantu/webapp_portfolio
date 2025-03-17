@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, url_for, jsonify
+from flask import Flask, request, render_template, url_for, jsonify, Response
 import re
 import csv
 import requests
@@ -247,6 +247,45 @@ def create_data_structure_diagram(db_description, output_folder):
     # Specify the full path for the output file
     output_path = os.path.join(output_folder, 'data_structure_diagram')
     dot.render(output_path, format='png', cleanup=True, engine='dot')
+
+# Wikipedia Recent Changes stream URL
+STREAM_URL = "https://stream.wikimedia.org/v2/stream/recentchange"
+# Function for wiki english new articles stream
+def process_wiki_stream():
+    while True:  # Retry loop for robustness
+        try:
+            logger.info("Connecting to Wikipedia stream...")
+            stream = SSEClient(STREAM_URL)
+            
+            for event in stream:
+                if event.event == "message" and event.data:
+                    try:
+                        data = json.loads(event.data)
+                        change_type = data.get("type", "unknown")
+                        wiki = data.get("wiki", "unknown")
+                        if change_type == "new" and wiki == "enwiki":
+                            title = data.get("title", "No title")
+                            user = data.get("user", "Anonymous")
+                            timestamp = data.get("timestamp", "N/A")
+                            event_data = {
+                                "wiki": "enwiki",
+                                "type": "NEW PAGE",
+                                "title": title,
+                                "user": user,
+                                "time": timestamp
+                            }
+                            logger.debug(f"Yielding event: {event_data}")
+                            yield f"data: {json.dumps(event_data)}\n\n"
+                    except json.JSONDecodeError as e:
+                        logger.error(f"JSON parse error: {e}")
+                        yield f"data: {json.dumps({'error': 'Failed to parse event data'})}\n\n"
+                    except Exception as e:
+                        logger.error(f"Processing error: {e}")
+                        yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Stream connection failed: {e}")
+            yield f"data: {json.dumps({'error': f'Stream connection failed: {str(e)}'})}\n\n"
+            break  # Exit inner loop to retry connection
 
 # Load the all mapping when the app starts
 datamart_mapping = load_datamart_mapping()
