@@ -23,12 +23,12 @@ import sendgrid
 from sendgrid.helpers.mail import Mail, Email, To, Content
 
 # SendGrid API Keys and emails
-SENDGRID_API_KEY = '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'
+SENDGRID_API_KEY = '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' # does not work anymore, ha
 SENDER_EMAIL = 'alvcantu@icloud.com'
 RECIPIENT_EMAIL = 'alvcantu@icloud.com'
 
 # Open Router API key used to connect to different LLM's
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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" # does not work anymore, ha
 
 # Register Roboto fonts
 pdfmetrics.registerFont(TTFont('Roboto', '/home/alvcantu/mysite/static/Roboto-Regular.ttf'))
