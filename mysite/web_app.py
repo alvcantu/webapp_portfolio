@@ -20,7 +20,7 @@ import xgboost as xgb
 app = Flask(__name__, static_url_path='/static')
 
 # Open Router API key used to connect to different LLM's
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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" # does not work anymore, ha
 
 # Connect to MySQL database
 def get_db_connection():
